@@ -36,7 +36,6 @@ export function useApplications(courseId?: number): UseApplicationsResult {
     try {
       const res = await getApplications(token, courseId)
       setApplications(res.applications)
-      hasLoadedRef.current = true
     } catch (err: unknown) {
       const e = err as { status?: number; message: string }
       if (e.status === 401) logoutRef.current()
@@ -44,6 +43,7 @@ export function useApplications(courseId?: number): UseApplicationsResult {
     } finally {
       setLoading(false)
       setRefreshing(false)
+      hasLoadedRef.current = true
     }
   }, [token, courseId])
 
