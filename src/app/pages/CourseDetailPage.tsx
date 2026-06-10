@@ -10,11 +10,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Badge } from "../components/ui/badge";
 import { ApplicantTable } from "../components/ApplicantTable";
 import { ApplicantCalendar } from "../components/ApplicantCalendar";
+import { ApplicantDetailSheet } from "../components/ApplicantDetailSheet";
 import { useApplications } from "../lib/useApplications";
 import { useAuth } from "../lib/auth";
 import { updateApplication } from "../lib/api";
 import { toApplicants, getCourseMeta } from "../lib/transform";
 import type { Applicant } from "../lib/transform";
+import type { Application } from "../lib/types";
 
 function exportCSV(courseTitle: string, applicants: Applicant[]) {
   const header = "번호,이름,나이,연락처,이메일,신청일,상태";
@@ -36,6 +38,8 @@ export function CourseDetailPage() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<"table" | "calendar">("table");
   const [searchName, setSearchName] = useState("");
+  const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const courseId = Number(id);
   const { applications, loading, refresh } = useApplications(courseId);
@@ -54,8 +58,10 @@ export function CourseDetailPage() {
   };
 
   const handleSelectApplicant = (applicant: Applicant) => {
-    // TODO: Task F에서 ApplicantDetailSheet 연결
-    console.log("선택된 신청자:", applicant);
+    const found = applications.find((app) => app.id === applicant.applicationId);
+    if (!found) return;
+    setSelectedApplication(found);
+    setSheetOpen(true);
   };
 
   const fillRate = Math.round((applicants.length / courseMeta.maxCapacity) * 100);
@@ -170,6 +176,7 @@ export function CourseDetailPage() {
               applicants={filtered}
               searchName={searchName}
               onSearchNameChange={setSearchName}
+              onSelect={handleSelectApplicant}
             />
           ) : (
             <ApplicantCalendar
@@ -180,6 +187,12 @@ export function CourseDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      <ApplicantDetailSheet
+        application={selectedApplication}
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+      />
     </div>
   );
 }

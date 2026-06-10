@@ -40,7 +40,7 @@ export function getCourseMeta(courseId: number) {
   return COURSES_META[courseId] ?? { title: '알 수 없는 강좌', category: '기타', duration: '—', maxCapacity: 30, price: 0 }
 }
 
-function calcAge(birthDate: string): number {
+export function calcAge(birthDate: string): number {
   const today = new Date()
   const birth = new Date(birthDate)
   let age = today.getFullYear() - birth.getFullYear()

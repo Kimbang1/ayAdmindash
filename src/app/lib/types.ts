@@ -28,6 +28,13 @@ export interface SecurityLog {
   details: Record<string, unknown> | null
 }
 
+export interface ConsultationLog {
+  id: string
+  application_id: string
+  content: string
+  created_at: string
+}
+
 export interface GetApplicationsResponse {
   applications: Application[]
 }

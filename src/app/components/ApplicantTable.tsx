@@ -29,6 +29,7 @@ interface ApplicantTableProps {
   applicants: Applicant[];
   searchName: string;
   onSearchNameChange: (value: string) => void;
+  onSelect?: (applicant: Applicant) => void;
 }
 
 function getPageNumbers(currentPage: number, totalPages: number): (number | "ellipsis")[] {
@@ -58,6 +59,7 @@ export function ApplicantTable({
   applicants,
   searchName,
   onSearchNameChange,
+  onSelect,
 }: ApplicantTableProps) {
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
@@ -117,7 +119,8 @@ export function ApplicantTable({
             {pageItems.map((a, i) => (
               <tr
                 key={a.id}
-                className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${
+                onClick={() => onSelect?.(a)}
+                className={`border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${
                   i % 2 === 0 ? "" : "bg-gray-50/50"
                 }`}
               >

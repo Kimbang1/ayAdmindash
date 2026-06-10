@@ -1,4 +1,4 @@
-import type { GetApplicationsResponse, GetLogsResponse } from './types'
+import type { ConsultationLog, GetApplicationsResponse, GetLogsResponse } from './types'
 
 interface ApiError extends Error {
   status: number
@@ -66,6 +66,18 @@ export const updateApplication = (
     method: 'PATCH',
     headers: { Authorization: `Bearer ${token}` },
     body: JSON.stringify(body),
+  })
+
+export const getConsultations = (token: string, applicationId: string): Promise<{ logs: ConsultationLog[] }> =>
+  callEdge<{ logs: ConsultationLog[] }>(`/admin-consultations?application_id=${applicationId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+
+export const addConsultation = (token: string, applicationId: string, content: string): Promise<{ log: ConsultationLog }> =>
+  callEdge<{ log: ConsultationLog }>('/admin-consultations', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ application_id: applicationId, content }),
   })
 
 export const getLogs = (
