@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -33,6 +33,8 @@ function ApplicantChip({
   applicant: Applicant;
   onSelect?: (applicant: Applicant) => void;
 }) {
+  const wasDraggingRef = useRef(false);
+
   const [{ isDragging }, drag] = useDrag<DragItem, unknown, { isDragging: boolean }>(() => ({
     type: APPLICANT_CHIP,
     item: { applicationId: applicant.applicationId },
@@ -41,6 +43,18 @@ function ApplicantChip({
     }),
   }), [applicant.applicationId]);
 
+  useEffect(() => {
+    if (isDragging) wasDraggingRef.current = true;
+  }, [isDragging]);
+
+  const handleClick = () => {
+    if (wasDraggingRef.current) {
+      wasDraggingRef.current = false;
+      return;
+    }
+    onSelect?.(applicant);
+  };
+
   const isScheduled = applicant.scheduledDate != null;
 
   return (
@@ -48,7 +62,7 @@ function ApplicantChip({
       <HoverCardTrigger asChild>
         <div
           ref={(node) => { drag(node); }}
-          onClick={() => onSelect?.(applicant)}
+          onClick={handleClick}
           className={`text-xs text-white rounded px-1 py-0.5 mb-0.5 truncate cursor-pointer transition-opacity ${
             isScheduled ? "bg-blue-600" : "bg-amber-500"
           } ${isDragging ? "opacity-40" : "opacity-100"}`}

@@ -44,7 +44,10 @@ export function CourseDetailPage() {
   const applicants = toApplicants(applications);
 
   const handleScheduledDateChange = (applicationId: string, newDate: string) => {
-    if (!token) return;
+    if (!token) {
+      console.error("상담 예정일 변경 실패: 인증 토큰이 없습니다");
+      return;
+    }
     updateApplication(token, { id: applicationId, scheduled_date: newDate })
       .then(() => refresh())
       .catch((err) => console.error("상담 예정일 변경 실패:", err));
