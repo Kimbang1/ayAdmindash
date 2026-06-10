@@ -6,6 +6,7 @@ import { useAuth } from './auth'
 interface UseApplicationsResult {
   applications: Application[]
   loading: boolean
+  refreshing: boolean
   error: string | null
   refresh: () => void
 }
@@ -17,28 +18,36 @@ export function useApplications(courseId?: number): UseApplicationsResult {
 
   const [applications, setApplications] = useState<Application[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const hasLoadedRef = useRef(false)
 
   const loadData = useCallback(async () => {
     if (!token) {
       setLoading(false)
       return
     }
-    setLoading(true)
+    if (hasLoadedRef.current) {
+      setRefreshing(true)
+    } else {
+      setLoading(true)
+    }
     setError(null)
     try {
       const res = await getApplications(token, courseId)
       setApplications(res.applications)
+      hasLoadedRef.current = true
     } catch (err: unknown) {
       const e = err as { status?: number; message: string }
       if (e.status === 401) logoutRef.current()
       else setError(e.message)
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
   }, [token, courseId])
 
   useEffect(() => { loadData() }, [loadData])
 
-  return { applications, loading, error, refresh: loadData }
+  return { applications, loading, refreshing, error, refresh: loadData }
 }
