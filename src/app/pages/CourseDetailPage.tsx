@@ -10,15 +10,10 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
+import { ApplicantTable } from "../components/ApplicantTable";
 import { useApplications } from "../lib/useApplications";
 import { toApplicants, getCourseMeta } from "../lib/transform";
 import type { Applicant } from "../lib/transform";
-
-const statusColors = {
-  "확정": "bg-emerald-100 text-emerald-700 border-emerald-200",
-  "대기": "bg-amber-100 text-amber-700 border-amber-200",
-  "취소": "bg-red-100 text-red-600 border-red-200",
-};
 
 function exportCSV(courseTitle: string, applicants: Applicant[]) {
   const header = "번호,이름,나이,연락처,이메일,신청일,상태";
@@ -265,64 +260,11 @@ export function CourseDetailPage() {
 
         <CardContent className="p-5">
           {tab === "table" ? (
-            <>
-              <div className="mb-4">
-                <input
-                  type="text"
-                  placeholder="이름 또는 상태로 검색..."
-                  value={searchName}
-                  onChange={(e) => setSearchName(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <div className="overflow-x-auto rounded-xl border border-gray-200">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-gray-50 border-b border-gray-200">
-                      {["번호", "이름", "나이", "연락처", "이메일", "신청일", "상태"].map((h) => (
-                        <th
-                          key={h}
-                          className="text-left text-xs font-semibold text-gray-500 px-4 py-3"
-                        >
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filtered.map((a, i) => (
-                      <tr
-                        key={a.id}
-                        className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${
-                          i % 2 === 0 ? "" : "bg-gray-50/50"
-                        }`}
-                      >
-                        <td className="px-4 py-3 text-gray-400 text-xs">{a.id}</td>
-                        <td className="px-4 py-3 font-medium text-gray-900">{a.name}</td>
-                        <td className="px-4 py-3 text-gray-600">{a.age}세</td>
-                        <td className="px-4 py-3 text-gray-600">{a.phone}</td>
-                        <td className="px-4 py-3 text-gray-500 text-xs">{a.email}</td>
-                        <td className="px-4 py-3 text-gray-600">{a.appliedDate}</td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`text-xs px-2 py-1 rounded-full border ${statusColors[a.status]}`}
-                          >
-                            {a.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                    {filtered.length === 0 && (
-                      <tr>
-                        <td colSpan={7} className="text-center py-10 text-gray-400 text-sm">
-                          검색 결과가 없습니다.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </>
+            <ApplicantTable
+              applicants={filtered}
+              searchName={searchName}
+              onSearchNameChange={setSearchName}
+            />
           ) : (
             <CalendarView applicants={applicants} />
           )}
