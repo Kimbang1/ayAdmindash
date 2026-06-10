@@ -29,25 +29,40 @@ export function ApplicantDetailSheet({
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [content, setContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open || !application || !token) {
       setLogs([]);
       setContent("");
+      setError(null);
       return;
     }
 
+    let cancelled = false;
     setLogs([]);
     setContent("");
+    setError(null);
     setLoadingLogs(true);
     getConsultations(token, application.id)
-      .then((res) => setLogs(res.logs))
-      .catch((err) => console.error("상담 이력 조회 실패:", err))
-      .finally(() => setLoadingLogs(false));
+      .then((res) => {
+        if (!cancelled) setLogs(res.logs);
+      })
+      .catch((err) => {
+        console.error("상담 이력 조회 실패:", err);
+        if (!cancelled) setError("상담 이력을 불러오지 못했습니다");
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingLogs(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [open, application, token]);
 
   const handleSubmit = () => {
     if (!application || !token || !content.trim() || submitting) return;
+    setError(null);
     setSubmitting(true);
     addConsultation(token, application.id, content.trim())
       .then(() => getConsultations(token, application.id))
@@ -55,7 +70,10 @@ export function ApplicantDetailSheet({
         setLogs(res.logs);
         setContent("");
       })
-      .catch((err) => console.error("상담 이력 등록 실패:", err))
+      .catch((err) => {
+        console.error("상담 이력 등록 실패:", err);
+        setError("상담 이력 등록에 실패했습니다");
+      })
       .finally(() => setSubmitting(false));
   };
 
@@ -130,6 +148,8 @@ export function ApplicantDetailSheet({
             {/* 상담 이력 */}
             <div>
               <h3 className="text-sm font-semibold text-gray-900 mb-3">상담 이력</h3>
+
+              {error && <p className="text-red-500 text-xs mb-2">{error}</p>}
 
               {loadingLogs ? (
                 <p className="text-sm text-gray-400">불러오는 중...</p>
