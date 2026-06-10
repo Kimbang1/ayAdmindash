@@ -1,11 +1,14 @@
-import { Bell, Settings, User, LogOut } from "lucide-react";
+import { Settings, User, LogOut } from "lucide-react";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Badge } from "./ui/badge";
 import { useAuth } from "../lib/auth";
+import { useNotifications } from "../lib/useNotifications";
+import { NotificationPanel } from "./NotificationPanel";
 
 export function Header() {
   const { logout } = useAuth();
+  const { newApplications, markAllSeen } = useNotifications();
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white">
       <div className="flex h-16 items-center px-6 gap-4">
@@ -22,10 +25,7 @@ export function Header() {
         <div className="flex-1" />
 
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-            <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
-          </Button>
+          <NotificationPanel newApplications={newApplications} markAllSeen={markAllSeen} />
           <Button variant="ghost" size="icon">
             <Settings className="h-5 w-5" />
           </Button>
