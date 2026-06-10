@@ -3,12 +3,16 @@ import { Button } from "./ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Badge } from "./ui/badge";
 import { useAuth } from "../lib/auth";
-import { useNotifications } from "../lib/useNotifications";
 import { NotificationPanel } from "./NotificationPanel";
+import type { Application } from "../lib/types";
 
-export function Header() {
+interface HeaderProps {
+  newApplications: Application[];
+  markAllSeen: () => void;
+}
+
+export function Header({ newApplications, markAllSeen }: HeaderProps) {
   const { logout } = useAuth();
-  const { newApplications, markAllSeen } = useNotifications();
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white">
       <div className="flex h-16 items-center px-6 gap-4">

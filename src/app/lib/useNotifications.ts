@@ -12,15 +12,18 @@ interface UseNotificationsResult {
   markAllSeen: () => void
 }
 
-function loadSeenIds(): Set<string> {
+function loadSeenIds(): { ids: Set<string>; existed: boolean } {
   try {
     const raw = localStorage.getItem(SEEN_IDS_KEY)
-    if (!raw) return new Set()
+    if (!raw) return { ids: new Set(), existed: false }
     const parsed: unknown = JSON.parse(raw)
-    if (!Array.isArray(parsed)) return new Set()
-    return new Set(parsed.filter((id): id is string => typeof id === 'string'))
+    if (!Array.isArray(parsed)) return { ids: new Set(), existed: false }
+    return {
+      ids: new Set(parsed.filter((id): id is string => typeof id === 'string')),
+      existed: true,
+    }
   } catch {
-    return new Set()
+    return { ids: new Set(), existed: false }
   }
 }
 
@@ -39,7 +42,9 @@ export function useNotifications(): UseNotificationsResult {
 
   const [applications, setApplications] = useState<Application[]>([])
   const [newApplications, setNewApplications] = useState<Application[]>([])
-  const seenIdsRef = useRef<Set<string>>(loadSeenIds())
+  const initialSeen = useRef(loadSeenIds())
+  const seenIdsRef = useRef<Set<string>>(initialSeen.current.ids)
+  const seenInitializedRef = useRef(initialSeen.current.existed)
 
   const recomputeNew = useCallback((apps: Application[]) => {
     const seen = seenIdsRef.current
@@ -51,7 +56,19 @@ export function useNotifications(): UseNotificationsResult {
     try {
       const res = await getApplications(token)
       setApplications(res.applications)
-      recomputeNew(res.applications)
+
+      if (!seenInitializedRef.current) {
+        // First-ever poll with no stored seen ids: seed the baseline with
+        // all currently-fetched applications so historical data isn't
+        // flagged as "new".
+        const baseline = new Set(res.applications.map((a) => a.id))
+        seenIdsRef.current = baseline
+        seenInitializedRef.current = true
+        saveSeenIds(baseline)
+        setNewApplications([])
+      } else {
+        recomputeNew(res.applications)
+      }
     } catch (err: unknown) {
       const e = err as { status?: number; message: string }
       if (e.status === 401) logoutRef.current()
