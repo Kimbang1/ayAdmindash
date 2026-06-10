@@ -5,13 +5,14 @@ import {
   Download,
   TableIcon,
   CalendarIcon,
-  ChevronLeft,
-  ChevronRight,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { ApplicantTable } from "../components/ApplicantTable";
+import { ApplicantCalendar } from "../components/ApplicantCalendar";
 import { useApplications } from "../lib/useApplications";
+import { useAuth } from "../lib/auth";
+import { updateApplication } from "../lib/api";
 import { toApplicants, getCourseMeta } from "../lib/transform";
 import type { Applicant } from "../lib/transform";
 
@@ -30,117 +31,6 @@ function exportCSV(courseTitle: string, applicants: Applicant[]) {
   URL.revokeObjectURL(url);
 }
 
-const MONTH_NAMES = [
-  "1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월",
-];
-const DAY_NAMES = ["일", "월", "화", "수", "목", "금", "토"];
-
-function CalendarView({ applicants }: { applicants: Applicant[] }) {
-  const now = new Date();
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(now.getMonth());
-
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-  const byDate: Record<string, string[]> = {};
-  applicants.forEach((a) => {
-    const d = a.appliedDate;
-    if (!byDate[d]) byDate[d] = [];
-    byDate[d].push(a.name);
-  });
-
-  const prev = () => {
-    if (month === 0) {
-      setMonth(11);
-      setYear((y) => y - 1);
-    } else {
-      setMonth((m) => m - 1);
-    }
-  };
-  const next = () => {
-    if (month === 11) {
-      setMonth(0);
-      setYear((y) => y + 1);
-    } else {
-      setMonth((m) => m + 1);
-    }
-  };
-
-  const cells: (number | null)[] = [
-    ...Array(firstDay).fill(null),
-    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
-  ];
-  while (cells.length % 7 !== 0) cells.push(null);
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <button onClick={prev} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
-          <ChevronLeft className="h-5 w-5 text-gray-600" />
-        </button>
-        <span className="font-semibold text-gray-800">
-          {year}년 {MONTH_NAMES[month]}
-        </span>
-        <button onClick={next} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
-          <ChevronRight className="h-5 w-5 text-gray-600" />
-        </button>
-      </div>
-
-      <div className="grid grid-cols-7 mb-1">
-        {DAY_NAMES.map((d, i) => (
-          <div
-            key={d}
-            className={`text-center text-xs font-semibold py-2 ${
-              i === 0 ? "text-red-400" : i === 6 ? "text-blue-400" : "text-gray-500"
-            }`}
-          >
-            {d}
-          </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-7 gap-1">
-        {cells.map((day, i) => {
-          if (!day) return <div key={`empty-${i}`} />;
-          const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-          const names = byDate[dateStr] ?? [];
-          const dow = (firstDay + day - 1) % 7;
-          const hasApplicants = names.length > 0;
-
-          return (
-            <div
-              key={day}
-              className={`min-h-16 rounded-lg p-1.5 border transition-colors ${
-                hasApplicants ? "bg-blue-50 border-blue-200" : "bg-white border-gray-100 hover:bg-gray-50"
-              }`}
-            >
-              <div
-                className={`text-xs font-semibold mb-1 ${
-                  dow === 0 ? "text-red-400" : dow === 6 ? "text-blue-400" : "text-gray-700"
-                }`}
-              >
-                {day}
-              </div>
-              {names.slice(0, 2).map((name, ni) => (
-                <div
-                  key={ni}
-                  className="text-xs bg-blue-600 text-white rounded px-1 py-0.5 mb-0.5 truncate"
-                >
-                  {name}
-                </div>
-              ))}
-              {names.length > 2 && (
-                <div className="text-xs text-blue-500 font-medium">+{names.length - 2}명</div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 export function CourseDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -148,9 +38,22 @@ export function CourseDetailPage() {
   const [searchName, setSearchName] = useState("");
 
   const courseId = Number(id);
-  const { applications, loading } = useApplications(courseId);
+  const { applications, loading, refresh } = useApplications(courseId);
+  const { token } = useAuth();
   const courseMeta = getCourseMeta(courseId);
   const applicants = toApplicants(applications);
+
+  const handleScheduledDateChange = (applicationId: string, newDate: string) => {
+    if (!token) return;
+    updateApplication(token, { id: applicationId, scheduled_date: newDate })
+      .then(() => refresh())
+      .catch((err) => console.error("상담 예정일 변경 실패:", err));
+  };
+
+  const handleSelectApplicant = (applicant: Applicant) => {
+    // TODO: Task F에서 ApplicantDetailSheet 연결
+    console.log("선택된 신청자:", applicant);
+  };
 
   const fillRate = Math.round((applicants.length / courseMeta.maxCapacity) * 100);
   const courseStatus: "모집중" | "마감임박" | "마감" =
@@ -266,7 +169,11 @@ export function CourseDetailPage() {
               onSearchNameChange={setSearchName}
             />
           ) : (
-            <CalendarView applicants={applicants} />
+            <ApplicantCalendar
+              applicants={applicants}
+              onScheduledDateChange={handleScheduledDateChange}
+              onSelect={handleSelectApplicant}
+            />
           )}
         </CardContent>
       </Card>

@@ -14,6 +14,7 @@ export interface Application {
   status: '접수' | '상담예정' | '상담완료'
   memo: string | null
   kakao_link: string | null
+  scheduled_date: string | null
   courses: { name: string }
 }
 

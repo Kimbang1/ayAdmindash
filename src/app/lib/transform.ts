@@ -16,11 +16,14 @@ export interface Course {
 
 export interface Applicant {
   id: number
+  applicationId: string
   name: string
   age: number
   phone: string
   email: string
   appliedDate: string
+  scheduledDate: string | null
+  rawStatus: '접수' | '상담예정' | '상담완료'
   status: '확정' | '대기' | '취소'
 }
 
@@ -90,11 +93,14 @@ export function toCourses(applications: Application[]): Course[] {
 export function toApplicants(applications: Application[]): Applicant[] {
   return applications.map((app, i) => ({
     id: i + 1,
+    applicationId: app.id,
     name: app.name,
     age: calcAge(app.birth_date),
     phone: app.phone,
     email: '',
     appliedDate: app.created_at.split('T')[0],
+    scheduledDate: app.scheduled_date,
+    rawStatus: app.status,
     status: mapApplicantStatus(app.status),
   }))
 }

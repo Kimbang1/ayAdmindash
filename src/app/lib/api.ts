@@ -60,7 +60,7 @@ export const getApplications = (token: string, courseId?: number): Promise<GetAp
 
 export const updateApplication = (
   token: string,
-  body: { id: string; status?: string; memo?: string; kakao_link?: string }
+  body: { id: string; status?: string; memo?: string; kakao_link?: string; scheduled_date?: string | null }
 ) =>
   callEdge<{ ok: boolean }>('/admin', {
     method: 'PATCH',
