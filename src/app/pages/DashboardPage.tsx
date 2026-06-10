@@ -66,6 +66,7 @@ export function DashboardPage() {
   const pendingCount = applications.filter((a) => a.status === "접수").length;
 
   const courses = toCourses(applications);
+  const monthlyRevenue = courses.reduce((s, c) => s + c.monthlyRevenue, 0);
   const recentConsultations = [...applications]
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 5)
@@ -101,7 +102,7 @@ export function DashboardPage() {
     },
     {
       title: "이번 달 매출",
-      value: "—",
+      value: `₩${monthlyRevenue.toLocaleString()}`,
       change: "—",
       icon: TrendingUp,
       color: "text-violet-600",

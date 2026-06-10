@@ -40,7 +40,7 @@ export function ApplicationsPage() {
 
   const totalApplicants = courses.reduce((s, c) => s + c.applicants, 0);
   const activeCount = courses.filter((c) => c.status === "모집중").length;
-  const newToday = courses.reduce((s, c) => s + c.newApplicants, 0);
+  const newThisMonth = courses.reduce((s, c) => s + c.newApplicants, 0);
 
   if (loading) {
     return (
@@ -71,8 +71,8 @@ export function ApplicationsPage() {
             <div className="text-xs text-blue-200 mt-0.5">모집 중 강좌</div>
           </div>
           <div className="bg-white/15 rounded-xl p-3 text-center">
-            <div className="text-2xl font-bold text-white">+{newToday}</div>
-            <div className="text-xs text-blue-200 mt-0.5">오늘 신규 신청</div>
+            <div className="text-2xl font-bold text-white">+{newThisMonth}</div>
+            <div className="text-xs text-blue-200 mt-0.5">이번 달 신규 신청</div>
           </div>
         </div>
       </div>

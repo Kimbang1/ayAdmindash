@@ -10,6 +10,8 @@ export interface Course {
   status: '모집중' | '마감임박' | '마감'
   maxCapacity: number
   startDate: string
+  price: number
+  monthlyRevenue: number
 }
 
 export interface Applicant {
@@ -22,17 +24,17 @@ export interface Applicant {
   status: '확정' | '대기' | '취소'
 }
 
-const COURSES_META: Record<number, { title: string; category: string; duration: string; maxCapacity: number }> = {
-  1: { title: '컴퓨터 활용 능력', category: '컴퓨터', duration: '3개월', maxCapacity: 30 },
-  2: { title: 'Figma UI/UX 디자인', category: '디자인', duration: '3개월', maxCapacity: 30 },
-  3: { title: '전산세무 회계', category: '세무', duration: '4개월', maxCapacity: 30 },
-  4: { title: '영상 편집반', category: '영상', duration: '2개월', maxCapacity: 30 },
+const COURSES_META: Record<number, { title: string; category: string; duration: string; maxCapacity: number; price: number }> = {
+  1: { title: '컴퓨터 활용 능력', category: '컴퓨터', duration: '3개월', maxCapacity: 30, price: 0 },
+  2: { title: 'Figma UI/UX 디자인', category: '디자인', duration: '3개월', maxCapacity: 30, price: 0 },
+  3: { title: '전산세무 회계', category: '세무', duration: '4개월', maxCapacity: 30, price: 0 },
+  4: { title: '영상 편집반', category: '영상', duration: '2개월', maxCapacity: 30, price: 0 },
 }
 
 export const COURSE_IDS = [1, 2, 3, 4] as const
 
 export function getCourseMeta(courseId: number) {
-  return COURSES_META[courseId] ?? { title: '알 수 없는 강좌', category: '기타', duration: '—', maxCapacity: 30 }
+  return COURSES_META[courseId] ?? { title: '알 수 없는 강좌', category: '기타', duration: '—', maxCapacity: 30, price: 0 }
 }
 
 function calcAge(birthDate: string): number {
@@ -55,12 +57,20 @@ function computeCourseStatus(count: number, max: number): Course['status'] {
   return '모집중'
 }
 
+function isThisMonth(dateStr: string, now: Date): boolean {
+  const date = new Date(dateStr)
+  return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth()
+}
+
 export function toCourses(applications: Application[]): Course[] {
-  const today = new Date().toDateString()
+  const now = new Date()
   return COURSE_IDS.map((courseId) => {
     const meta = COURSES_META[courseId]
     const apps = applications.filter((a) => a.course_id === courseId)
-    const newApplicants = apps.filter((a) => new Date(a.created_at).toDateString() === today).length
+    const newApplicants = apps.filter((a) => isThisMonth(a.created_at, now)).length
+    const monthlyConfirmed = apps.filter(
+      (a) => isThisMonth(a.created_at, now) && a.status === '상담완료'
+    ).length
     return {
       id: String(courseId),
       title: meta.title,
@@ -71,6 +81,8 @@ export function toCourses(applications: Application[]): Course[] {
       status: computeCourseStatus(apps.length, meta.maxCapacity),
       maxCapacity: meta.maxCapacity,
       startDate: '',
+      price: meta.price,
+      monthlyRevenue: monthlyConfirmed * meta.price,
     }
   })
 }
