@@ -17,7 +17,9 @@ export function LoginPage() {
       await login(pw)
       navigate('/', { replace: true })
     } catch (err: unknown) {
-      setError((err as { message: string }).message)
+      const errorValue = err as { status?: number; message?: string }
+      if (errorValue.status === 401) setError('관리자 비밀번호가 올바르지 않습니다.')
+      else setError('서버에 연결하지 못했습니다. 잠시 후 다시 시도해주세요.')
     } finally {
       setLoading(false)
     }

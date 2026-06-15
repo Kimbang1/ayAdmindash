@@ -74,7 +74,7 @@ function ApplicantChip({
         <div className="flex items-center gap-2">
           <span className="font-semibold text-gray-700">{applicant.name}</span>
           <span className="px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600">
-            {applicant.rawStatus}
+            {applicant.consultationStatus}
           </span>
         </div>
       </HoverCardContent>
@@ -182,13 +182,21 @@ function ApplicantCalendarInner({
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <button onClick={prev} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
+        <button
+          onClick={prev}
+          aria-label="이전 달 보기"
+          className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+        >
           <ChevronLeft className="h-5 w-5 text-gray-600" />
         </button>
         <span className="font-semibold text-gray-800">
           {year}년 {MONTH_NAMES[month]}
         </span>
-        <button onClick={next} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
+        <button
+          onClick={next}
+          aria-label="다음 달 보기"
+          className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+        >
           <ChevronRight className="h-5 w-5 text-gray-600" />
         </button>
       </div>

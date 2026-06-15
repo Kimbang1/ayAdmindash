@@ -2,7 +2,7 @@ import {
   ClipboardList,
   Users,
   MessageSquare,
-  TrendingUp,
+  WalletCards,
   Phone,
   MessageCircle,
   CheckCircle,
@@ -14,20 +14,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Badge } from "../components/ui/badge";
 import { useNavigate } from "react-router";
 import { useApplications } from "../lib/useApplications";
+import { useCourses } from "../lib/useCourses";
+import { useAdminStats } from "../lib/useAdminStats";
 import { toCourses } from "../lib/transform";
+import { LoadError } from "../components/LoadError";
 import type { Application } from "../lib/types";
 
 const statusConfig = {
   "미처리": { icon: AlertCircle, color: "text-red-600", bg: "bg-red-50 border-red-100" },
   "처리중": { icon: Clock, color: "text-amber-600", bg: "bg-amber-50 border-amber-100" },
   "완료": { icon: CheckCircle, color: "text-emerald-600", bg: "bg-emerald-50 border-emerald-100" },
-};
-
-const COURSE_NAMES: Record<number, string> = {
-  1: "컴퓨터 활용 능력",
-  2: "Figma UI/UX 디자인",
-  3: "전산세무 회계",
-  4: "영상 편집반",
 };
 
 function formatRelativeTime(dateStr: string): string {
@@ -40,52 +36,61 @@ function formatRelativeTime(dateStr: string): string {
   return `${Math.floor(hours / 24)}일 전`;
 }
 
-function toConsultation(app: Application) {
+function toConsultation(app: Application, additionalPhones: Set<string>) {
   const status =
     app.status === "상담완료" ? "완료" : app.status === "상담예정" ? "처리중" : "미처리";
   return {
     id: app.id,
+    courseId: app.course_id,
     name: app.name,
-    course: COURSE_NAMES[app.course_id] ?? "기타",
+    course: app.courses.name,
     type: app.kakao_link ? "kakao" : "phone",
     content: app.memo ?? app.motivation ?? "신청 접수",
     time: formatRelativeTime(app.created_at),
     status,
+    isAdditionalCourse: additionalPhones.has(app.phone),
   };
 }
 
 export function DashboardPage() {
   const navigate = useNavigate();
-  const { applications, loading } = useApplications();
+  const applicationsQuery = useApplications();
+  const coursesQuery = useCourses();
+  const statsQuery = useAdminStats();
 
-  const today = new Date().toDateString();
-  const todayCount = applications.filter(
-    (a) => new Date(a.created_at).toDateString() === today
-  ).length;
-  const completedCount = applications.filter((a) => a.status === "상담완료").length;
-  const pendingCount = applications.filter((a) => a.status === "접수").length;
-
-  const courses = toCourses(applications);
-  const monthlyRevenue = courses.reduce((s, c) => s + c.monthlyRevenue, 0);
+  const { applications, loading, error, lastUpdated, refresh } = applicationsQuery;
+  const courses = toCourses(applications, coursesQuery.courses);
+  const registeredCoursesByPhone = new Map<string, Set<number>>();
+  for (const application of applications) {
+    if (application.enrollment_status !== "등록") continue;
+    const ids = registeredCoursesByPhone.get(application.phone) ?? new Set<number>();
+    ids.add(application.course_id);
+    registeredCoursesByPhone.set(application.phone, ids);
+  }
+  const additionalPhones = new Set(
+    Array.from(registeredCoursesByPhone.entries())
+      .filter(([, ids]) => ids.size > 1)
+      .map(([phone]) => phone)
+  );
   const recentConsultations = [...applications]
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 5)
-    .map(toConsultation);
+    .map((application) => toConsultation(application, additionalPhones));
 
-  const stats = [
+  const summary = statsQuery.stats?.summary;
+  const pendingCount = applications.filter((application) => application.status === "접수").length;
+  const cards = [
     {
-      title: "오늘 신청",
-      value: String(todayCount),
-      change: `+${todayCount}`,
+      title: "이번 달 신청",
+      value: summary?.applications ?? 0,
       icon: ClipboardList,
       color: "text-blue-600",
       bgColor: "bg-blue-100",
       border: "border-blue-200",
     },
     {
-      title: "총 수강생",
-      value: String(completedCount),
-      change: `+${completedCount}`,
+      title: "이번 달 등록",
+      value: summary?.registrations ?? 0,
       icon: Users,
       color: "text-emerald-600",
       bgColor: "bg-emerald-100",
@@ -93,8 +98,7 @@ export function DashboardPage() {
     },
     {
       title: "미처리 상담",
-      value: String(pendingCount),
-      change: `+${pendingCount}`,
+      value: pendingCount,
       icon: MessageSquare,
       color: "text-amber-600",
       bgColor: "bg-amber-100",
@@ -102,9 +106,8 @@ export function DashboardPage() {
     },
     {
       title: "이번 달 매출",
-      value: `₩${monthlyRevenue.toLocaleString()}`,
-      change: "—",
-      icon: TrendingUp,
+      value: `${(summary?.revenue ?? 0).toLocaleString()}원`,
+      icon: WalletCards,
       color: "text-violet-600",
       bgColor: "bg-violet-100",
       border: "border-violet-200",
@@ -116,10 +119,12 @@ export function DashboardPage() {
     month: "long",
     day: "numeric",
   });
+  const updatedText = lastUpdated
+    ? lastUpdated.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })
+    : "확인 중";
 
   return (
     <div className="space-y-8">
-      {/* 페이지 헤더 */}
       <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-2xl p-6 text-white">
         <div className="flex items-center justify-between">
           <div>
@@ -130,35 +135,35 @@ export function DashboardPage() {
           <div className="text-right text-sm text-slate-400">
             <div>{nowDate}</div>
             <div className="text-xs mt-1">
-              {loading ? "불러오는 중..." : "마지막 업데이트: 방금 전"}
+              {loading ? "불러오는 중..." : `마지막 업데이트: ${updatedText}`}
             </div>
           </div>
         </div>
       </div>
 
-      {/* 통계 카드 */}
+      {error && <LoadError message={error} onRetry={refresh} stale={applications.length > 0} />}
+      {coursesQuery.error && (
+        <LoadError message={coursesQuery.error} onRetry={coursesQuery.refresh} stale={coursesQuery.courses.length > 0} />
+      )}
+      {statsQuery.error && (
+        <LoadError message={statsQuery.error} onRetry={statsQuery.refresh} stale={Boolean(statsQuery.stats)} />
+      )}
+
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <Card key={stat.title} className={`border-2 ${stat.border}`}>
+        {cards.map((card) => (
+          <Card key={card.title} className={`border-2 ${card.border}`}>
             <CardContent className="p-5">
-              <div className="flex items-center justify-between mb-4">
-                <div className={`${stat.bgColor} p-2.5 rounded-xl`}>
-                  <stat.icon className={`h-5 w-5 ${stat.color}`} />
-                </div>
-                <span className="text-xs font-medium text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                  {stat.change}
-                </span>
+              <div className={`${card.bgColor} p-2.5 rounded-xl w-fit mb-4`}>
+                <card.icon className={`h-5 w-5 ${card.color}`} />
               </div>
-              <div className={`text-3xl font-bold ${stat.color} mb-1`}>{stat.value}</div>
-              <div className="text-sm text-gray-500">{stat.title}</div>
+              <div className={`text-3xl font-bold ${card.color} mb-1`}>{card.value}</div>
+              <div className="text-sm text-gray-500">{card.title}</div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {/* 강좌 요약 + 최근 상담 */}
       <div className="grid gap-6 lg:grid-cols-5">
-        {/* 강좌 요약 */}
         <Card className="lg:col-span-2 border border-gray-200">
           <CardHeader className="pb-3 border-b bg-gray-50 rounded-t-xl">
             <div className="flex items-center justify-between">
@@ -172,32 +177,34 @@ export function DashboardPage() {
             </div>
           </CardHeader>
           <CardContent className="p-4 space-y-2">
-            {courses.map((c) => (
+            {courses.map((course) => (
               <button
-                key={c.id}
-                onClick={() => navigate(`/course/${c.id}`)}
-                className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-blue-50 transition-colors text-left group"
+                key={course.id}
+                onClick={() => navigate(`/course/${course.id}`)}
+                className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-blue-50 transition-colors text-left"
               >
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm text-gray-800 truncate">{c.title}</div>
+                  <div className="text-sm text-gray-800 truncate">{course.title}</div>
                   <div className="text-xs text-gray-400 mt-0.5">
-                    {c.category} · {c.duration}
+                    {course.duration} · {course.price.toLocaleString()}원
                   </div>
                 </div>
                 <div className="flex items-center gap-2 ml-3 shrink-0">
-                  <span className="text-sm font-semibold text-blue-600">{c.applicants}명</span>
-                  {c.newApplicants > 0 && (
+                  <span className="text-sm font-semibold text-blue-600">{course.applicants}명</span>
+                  {course.newApplicants > 0 && (
                     <span className="text-xs bg-red-500 text-white rounded-full px-1.5">
-                      +{c.newApplicants}
+                      +{course.newApplicants}
                     </span>
                   )}
                 </div>
               </button>
             ))}
+            {!coursesQuery.loading && courses.length === 0 && (
+              <div className="text-center py-8 text-gray-400 text-sm">등록된 강좌가 없습니다.</div>
+            )}
           </CardContent>
         </Card>
 
-        {/* 최근 상담 */}
         <Card className="lg:col-span-3 border border-gray-200">
           <CardHeader className="pb-3 border-b bg-gray-50 rounded-t-xl">
             <div className="flex items-center justify-between">
@@ -217,21 +224,18 @@ export function DashboardPage() {
             {loading && applications.length === 0 && (
               <div className="text-center py-8 text-gray-400 text-sm">불러오는 중...</div>
             )}
-            {!loading && recentConsultations.length === 0 && (
+            {!loading && recentConsultations.length === 0 && !error && (
               <div className="text-center py-8 text-gray-400 text-sm">신청 내역이 없습니다.</div>
             )}
             {recentConsultations.map((item) => {
-              const cfg = statusConfig[item.status as keyof typeof statusConfig];
+              const config = statusConfig[item.status as keyof typeof statusConfig];
               return (
-                <div
+                <button
                   key={item.id}
-                  className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
+                  onClick={() => navigate(`/course/${item.courseId}?application=${item.id}`)}
+                  className="w-full flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors text-left"
                 >
-                  <div
-                    className={`p-2 rounded-lg shrink-0 ${
-                      item.type === "kakao" ? "bg-yellow-100" : "bg-blue-100"
-                    }`}
-                  >
+                  <div className={`p-2 rounded-lg shrink-0 ${item.type === "kakao" ? "bg-yellow-100" : "bg-blue-100"}`}>
                     {item.type === "kakao" ? (
                       <MessageCircle className="h-4 w-4 text-yellow-600" />
                     ) : (
@@ -241,21 +245,18 @@ export function DashboardPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
                       <span className="text-sm font-medium text-gray-900">{item.name}</span>
-                      <Badge variant="outline" className="text-xs px-1.5 py-0">
-                        {item.course}
-                      </Badge>
+                      <Badge variant="outline" className="text-xs px-1.5 py-0">{item.course}</Badge>
+                      {item.isAdditionalCourse && <Badge className="text-xs bg-violet-100 text-violet-700">추가수강</Badge>}
                     </div>
                     <p className="text-sm text-gray-500 truncate">{item.content}</p>
                   </div>
                   <div className="flex flex-col items-end gap-1 shrink-0">
                     <span className="text-xs text-gray-400">{item.time}</span>
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full border ${cfg.bg} ${cfg.color}`}
-                    >
+                    <span className={`text-xs px-2 py-0.5 rounded-full border ${config.bg} ${config.color}`}>
                       {item.status}
                     </span>
                   </div>
-                </div>
+                </button>
               );
             })}
           </CardContent>

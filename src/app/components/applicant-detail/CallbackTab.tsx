@@ -1,0 +1,101 @@
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+
+import { useAuth } from "../../lib/auth";
+import { addCallback, getCallbacks } from "../../lib/api";
+import type { Application, CallbackLog } from "../../lib/types";
+import { Textarea } from "../ui/textarea";
+import { Button } from "../ui/button";
+import { DateFieldPopover } from "./DateFieldPopover";
+
+interface CallbackTabProps {
+  application: Application;
+}
+
+const today = () => new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
+
+export function CallbackTab({ application }: CallbackTabProps) {
+  const { token } = useAuth();
+  const [logs, setLogs] = useState<CallbackLog[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [memo, setMemo] = useState("");
+  const [callbackDate, setCallbackDate] = useState(today());
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    setLoadingLogs(true);
+    setError(null);
+    getCallbacks(token, application.id)
+      .then((res) => {
+        if (!cancelled) setLogs(res.logs);
+      })
+      .catch((err) => {
+        console.error("재전화문의 이력 조회 실패:", err);
+        if (!cancelled) setError("재전화문의 이력을 불러오지 못했습니다");
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingLogs(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [token, application.id]);
+
+  const handleSubmit = () => {
+    if (!token || !memo.trim() || submitting) return;
+    setSubmitting(true);
+    addCallback(token, application.id, callbackDate, memo.trim())
+      .then(() => getCallbacks(token, application.id))
+      .then((res) => {
+        setLogs(res.logs);
+        setMemo("");
+        toast.success("재전화문의 이력을 등록했습니다");
+      })
+      .catch((err) => {
+        console.error("재전화문의 이력 등록 실패:", err);
+        toast.error("재전화문의 이력을 등록하지 못했습니다");
+      })
+      .finally(() => setSubmitting(false));
+  };
+
+  return (
+    <div className="space-y-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+      <h3 className="text-sm font-semibold text-amber-900">재전화문의 이력</h3>
+
+      {error && <p className="text-xs text-red-500">{error}</p>}
+
+      {loadingLogs ? (
+        <p className="text-sm text-amber-500">불러오는 중...</p>
+      ) : logs.length === 0 ? (
+        <p className="text-sm text-amber-500">재전화문의 이력이 없습니다.</p>
+      ) : (
+        <ul className="space-y-2">
+          {logs.map((log) => (
+            <li key={log.id} className="rounded-md border border-amber-100 bg-white p-3 text-sm">
+              <p className="whitespace-pre-wrap text-gray-900">{log.memo}</p>
+              <p className="mt-1 text-xs text-gray-400">
+                재전화일 {log.callback_date} · {new Date(log.created_at).toLocaleString("ko-KR")}
+              </p>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="space-y-2 rounded-md border border-amber-100 bg-white p-3">
+        <DateFieldPopover value={callbackDate} onChange={(date) => setCallbackDate(date ?? today())} allowClear={false} />
+        <Textarea
+          value={memo}
+          onChange={(e) => setMemo(e.target.value)}
+          placeholder="재전화문의 내용을 입력하세요"
+          rows={3}
+        />
+        <Button onClick={handleSubmit} disabled={!memo.trim() || submitting} size="sm">
+          등록
+        </Button>
+      </div>
+    </div>
+  );
+}

@@ -8,6 +8,7 @@ interface UseApplicationsResult {
   loading: boolean
   refreshing: boolean
   error: string | null
+  lastUpdated: Date | null
   refresh: () => void
 }
 
@@ -20,6 +21,7 @@ export function useApplications(courseId?: number): UseApplicationsResult {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const hasLoadedRef = useRef(false)
 
   const loadData = useCallback(async () => {
@@ -36,6 +38,7 @@ export function useApplications(courseId?: number): UseApplicationsResult {
     try {
       const res = await getApplications(token, courseId)
       setApplications(res.applications)
+      setLastUpdated(new Date())
     } catch (err: unknown) {
       const e = err as { status?: number; message: string }
       if (e.status === 401) logoutRef.current()
@@ -49,5 +52,5 @@ export function useApplications(courseId?: number): UseApplicationsResult {
 
   useEffect(() => { loadData() }, [loadData])
 
-  return { applications, loading, refreshing, error, refresh: loadData }
+  return { applications, loading, refreshing, error, lastUpdated, refresh: loadData }
 }

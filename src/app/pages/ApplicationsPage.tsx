@@ -5,7 +5,9 @@ import { Input } from "../components/ui/input";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useApplications } from "../lib/useApplications";
+import { useCourses } from "../lib/useCourses";
 import { toCourses } from "../lib/transform";
+import { LoadError } from "../components/LoadError";
 
 const statusColors = {
   "모집중": "bg-emerald-100 text-emerald-700 border-emerald-200",
@@ -29,8 +31,10 @@ const categoryColors: Record<string, string> = {
 export function ApplicationsPage() {
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
-  const { applications, loading } = useApplications();
-  const courses = toCourses(applications);
+  const applicationsQuery = useApplications();
+  const coursesQuery = useCourses();
+  const { applications, loading, error, refresh } = applicationsQuery;
+  const courses = toCourses(applications, coursesQuery.courses);
 
   const filtered = courses.filter(
     (c) =>
@@ -42,7 +46,7 @@ export function ApplicationsPage() {
   const activeCount = courses.filter((c) => c.status === "모집중").length;
   const newThisMonth = courses.reduce((s, c) => s + c.newApplicants, 0);
 
-  if (loading) {
+  if ((loading || coursesQuery.loading) && courses.length === 0) {
     return (
       <div className="flex items-center justify-center h-64 text-gray-400">
         불러오는 중...
@@ -52,6 +56,10 @@ export function ApplicationsPage() {
 
   return (
     <div className="space-y-6">
+      {error && <LoadError message={error} onRetry={refresh} stale={applications.length > 0} />}
+      {coursesQuery.error && (
+        <LoadError message={coursesQuery.error} onRetry={coursesQuery.refresh} stale={coursesQuery.courses.length > 0} />
+      )}
       {/* 페이지 헤더 */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-500 rounded-2xl p-6 text-white">
         <div className="flex items-center justify-between mb-4">

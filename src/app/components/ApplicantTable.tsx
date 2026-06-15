@@ -17,9 +17,15 @@ import {
 } from "./ui/pagination";
 import type { Applicant } from "../lib/transform";
 
-const statusColors = {
-  "확정": "bg-emerald-100 text-emerald-700 border-emerald-200",
-  "대기": "bg-amber-100 text-amber-700 border-amber-200",
+const consultationStatusColors = {
+  "접수": "bg-red-100 text-red-700 border-red-200",
+  "상담예정": "bg-amber-100 text-amber-700 border-amber-200",
+  "상담완료": "bg-emerald-100 text-emerald-700 border-emerald-200",
+};
+
+const enrollmentStatusColors = {
+  "미등록": "bg-gray-100 text-gray-600 border-gray-200",
+  "등록": "bg-blue-100 text-blue-700 border-blue-200",
   "취소": "bg-red-100 text-red-600 border-red-200",
 };
 
@@ -105,7 +111,7 @@ export function ApplicantTable({
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200">
-              {["번호", "이름", "나이", "연락처", "이메일", "신청일", "상태"].map((h) => (
+              {["번호", "이름", "나이", "연락처", "신청일", "상담 상태", "등록 상태"].map((h) => (
                 <th
                   key={h}
                   className="text-left text-xs font-semibold text-gray-500 px-4 py-3"
@@ -120,22 +126,44 @@ export function ApplicantTable({
               <tr
                 key={a.id}
                 onClick={() => onSelect?.(a)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    onSelect?.(a);
+                  }
+                }}
+                tabIndex={0}
+                role="button"
+                aria-label={`${a.name} 신청자 상세 열기`}
                 className={`border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${
                   i % 2 === 0 ? "" : "bg-gray-50/50"
-                }`}
+                } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500`}
               >
                 <td className="px-4 py-3 text-gray-400 text-xs">{a.id}</td>
                 <td className="px-4 py-3 font-medium text-gray-900">{a.name}</td>
                 <td className="px-4 py-3 text-gray-600">{a.age}세</td>
                 <td className="px-4 py-3 text-gray-600">{a.phone}</td>
-                <td className="px-4 py-3 text-gray-500 text-xs">{a.email}</td>
                 <td className="px-4 py-3 text-gray-600">{a.appliedDate}</td>
                 <td className="px-4 py-3">
                   <span
-                    className={`text-xs px-2 py-1 rounded-full border ${statusColors[a.status]}`}
+                    className={`text-xs px-2 py-1 rounded-full border ${consultationStatusColors[a.consultationStatus]}`}
                   >
-                    {a.status}
+                    {a.consultationStatus}
                   </span>
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full border ${enrollmentStatusColors[a.enrollmentStatus]}`}
+                    >
+                      {a.enrollmentStatus}
+                    </span>
+                    {a.isAdditionalCourse && (
+                      <span className="text-xs px-2 py-1 rounded-full bg-violet-100 text-violet-700">
+                        추가수강
+                      </span>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}

@@ -5,6 +5,7 @@ import { Badge } from "./ui/badge";
 import { useAuth } from "../lib/auth";
 import { NotificationPanel } from "./NotificationPanel";
 import type { Application } from "../lib/types";
+import { useNavigate } from "react-router";
 
 interface HeaderProps {
   newApplications: Application[];
@@ -13,6 +14,7 @@ interface HeaderProps {
 
 export function Header({ newApplications, markAllSeen }: HeaderProps) {
   const { logout } = useAuth();
+  const navigate = useNavigate();
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white">
       <div className="flex h-16 items-center px-6 gap-4">
@@ -30,7 +32,13 @@ export function Header({ newApplications, markAllSeen }: HeaderProps) {
 
         <div className="flex items-center gap-3">
           <NotificationPanel newApplications={newApplications} markAllSeen={markAllSeen} />
-          <Button variant="ghost" size="icon">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/settings/courses")}
+            aria-label="강좌 설정 열기"
+            title="강좌 설정"
+          >
             <Settings className="h-5 w-5" />
           </Button>
           <div className="flex items-center gap-2 pl-3 border-l">
@@ -50,6 +58,7 @@ export function Header({ newApplications, markAllSeen }: HeaderProps) {
             size="icon"
             onClick={logout}
             title="로그아웃"
+            aria-label="로그아웃"
             className="text-gray-500 hover:text-red-600"
           >
             <LogOut className="h-5 w-5" />

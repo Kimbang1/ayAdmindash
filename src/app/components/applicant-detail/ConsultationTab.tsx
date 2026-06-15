@@ -1,0 +1,137 @@
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+
+import { useAuth } from "../../lib/auth";
+import { addConsultation, getConsultations, updateConsultationDate } from "../../lib/api";
+import type { Application, ConsultationLog } from "../../lib/types";
+import { Textarea } from "../ui/textarea";
+import { Button } from "../ui/button";
+import { DateFieldPopover } from "./DateFieldPopover";
+import type { ApplicationSaveFields } from "./ApplicantDetailWindow";
+
+interface ConsultationTabProps {
+  application: Application;
+  onSave: (updates: ApplicationSaveFields) => void | Promise<void>;
+  saving: boolean;
+}
+
+const today = () => new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
+
+export function ConsultationTab({ application, onSave, saving }: ConsultationTabProps) {
+  const { token } = useAuth();
+  const [logs, setLogs] = useState<ConsultationLog[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [content, setContent] = useState("");
+  const [consultationDate, setConsultationDate] = useState(today());
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    setLoadingLogs(true);
+    setError(null);
+    getConsultations(token, application.id)
+      .then((res) => {
+        if (!cancelled) setLogs(res.logs);
+      })
+      .catch((err) => {
+        console.error("상담 이력 조회 실패:", err);
+        if (!cancelled) setError("상담 이력을 불러오지 못했습니다");
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingLogs(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [token, application.id]);
+
+  const handleSubmit = () => {
+    if (!token || !content.trim() || submitting) return;
+    setSubmitting(true);
+    addConsultation(token, application.id, content.trim(), consultationDate)
+      .then(() => getConsultations(token, application.id))
+      .then((res) => {
+        setLogs(res.logs);
+        setContent("");
+        toast.success("상담 이력을 등록했습니다");
+      })
+      .catch((err) => {
+        console.error("상담 이력 등록 실패:", err);
+        toast.error("상담 이력을 등록하지 못했습니다");
+      })
+      .finally(() => setSubmitting(false));
+  };
+
+  const handleLogDateChange = (logId: string, date: string | null) => {
+    if (!token || !date) return;
+    updateConsultationDate(token, logId, date)
+      .then((res) => {
+        setLogs((prev) => prev.map((log) => (log.id === logId ? res.log : log)));
+        toast.success("상담일을 수정했습니다");
+      })
+      .catch((err) => {
+        console.error("상담일 수정 실패:", err);
+        toast.error("상담일을 수정하지 못했습니다");
+      });
+  };
+
+  return (
+    <div className="space-y-4 rounded-xl border border-blue-200 bg-blue-50 p-4">
+      <div>
+        <h3 className="mb-2 text-sm font-semibold text-blue-900">상담 예정일</h3>
+        <div className="rounded-md border border-blue-100 bg-white p-2">
+          <DateFieldPopover
+            value={application.scheduled_date}
+            onChange={(date) => onSave({ scheduled_date: date })}
+            placeholder="상담 예정일을 선택하세요"
+            disabled={saving}
+          />
+        </div>
+      </div>
+
+      <div>
+        <h3 className="mb-2 text-sm font-semibold text-blue-900">상담 이력</h3>
+        {error && <p className="mb-2 text-xs text-red-500">{error}</p>}
+        {loadingLogs ? (
+          <p className="text-sm text-blue-400">불러오는 중...</p>
+        ) : logs.length === 0 ? (
+          <p className="text-sm text-blue-400">상담 이력이 없습니다.</p>
+        ) : (
+          <ul className="mb-3 space-y-2">
+            {logs.map((log) => (
+              <li key={log.id} className="rounded-md border border-blue-100 bg-white p-3 text-sm">
+                <p className="whitespace-pre-wrap text-gray-900">{log.content}</p>
+                <div className="mt-2 flex items-center gap-2">
+                  <DateFieldPopover
+                    value={log.consultation_date}
+                    onChange={(date) => handleLogDateChange(log.id, date)}
+                    allowClear={false}
+                    className="h-8 w-auto text-xs"
+                  />
+                  <span className="text-xs text-gray-400">
+                    {new Date(log.created_at).toLocaleString("ko-KR")}
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <div className="space-y-2 rounded-md border border-blue-100 bg-white p-3">
+          <DateFieldPopover value={consultationDate} onChange={(date) => setConsultationDate(date ?? today())} allowClear={false} />
+          <Textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="상담 내용을 입력하세요"
+            rows={3}
+          />
+          <Button onClick={handleSubmit} disabled={!content.trim() || submitting} size="sm">
+            등록
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}

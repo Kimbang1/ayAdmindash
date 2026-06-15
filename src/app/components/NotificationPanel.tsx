@@ -33,13 +33,19 @@ export function NotificationPanel({ newApplications, markAllSeen }: Notification
 
   const handleSelect = (app: Application) => {
     markAllSeen();
-    navigate(`/course/${app.course_id}`);
+    navigate(`/course/${app.course_id}?application=${app.id}`);
   };
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative"
+          aria-label="새 신청 알림 열기"
+          title="새 신청 알림"
+        >
           <Bell className="h-5 w-5" />
           {hasNew && (
             <Badge

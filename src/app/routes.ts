@@ -5,6 +5,7 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { ApplicationsPage } from "./pages/ApplicationsPage";
 import { StatsPage } from "./pages/StatsPage";
 import { CourseDetailPage } from "./pages/CourseDetailPage";
+import { CourseSettingsPage } from "./pages/CourseSettingsPage";
 
 export const router = createBrowserRouter([
   { path: "/login", Component: LoginPage },
@@ -16,6 +17,7 @@ export const router = createBrowserRouter([
       { path: "applications", Component: ApplicationsPage },
       { path: "stats", Component: StatsPage },
       { path: "course/:id", Component: CourseDetailPage },
+      { path: "settings/courses", Component: CourseSettingsPage },
     ],
   },
 ]);

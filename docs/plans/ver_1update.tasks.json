@@ -1,0 +1,186 @@
+{
+  "version": "1.0",
+  "title": "EduAdmin ver_1 usability and reliability update",
+  "repositories": {
+    "frontend": "C:\\Users\\hi01\\Desktop\\H\\def\\AdminDashBoard",
+    "backend": "C:\\Users\\hi01\\Desktop\\H\\def\\HomeProto"
+  },
+  "assumptions": [
+    "Mobile-specific improvements are excluded.",
+    "Consultation status remains 접수/상담예정/상담완료.",
+    "Enrollment status is 미등록/등록/취소.",
+    "Additional enrollment is derived from the same phone being registered in multiple courses.",
+    "Monthly reporting uses Asia/Seoul.",
+    "Revenue means registered_price for currently registered applications whose registered_at is in the selected month."
+  ],
+  "tasks": [
+    {
+      "id": "V1-001",
+      "title": "Add course pricing and enrollment snapshot schema",
+      "repository": "backend",
+      "depends_on": [],
+      "files": {
+        "create": ["supabase/migrations/007_admin_v1_operations.sql"],
+        "modify": [],
+        "delete": []
+      },
+      "steps": [
+        "Add duration, capacity, and price to courses.",
+        "Add enrollment_status, registered_at, and registered_price to applications.",
+        "Backfill existing rows and add constraints/indexes."
+      ],
+      "verification": {
+        "commands": ["npx supabase db push"],
+        "acceptance": ["Migration applies without dropping existing columns or user data."]
+      },
+      "commit_message": "feat: add enrollment and course pricing schema"
+    },
+    {
+      "id": "V1-002",
+      "title": "Extend admin application API",
+      "repository": "backend",
+      "depends_on": ["V1-001"],
+      "files": {
+        "create": [],
+        "modify": ["supabase/functions/admin/index.ts"],
+        "delete": []
+      },
+      "steps": [
+        "Preserve has_training_card support.",
+        "Return enrollment and expanded course fields.",
+        "Snapshot course price and registration time on transition to 등록.",
+        "Return the updated application."
+      ],
+      "verification": {
+        "commands": ["deno check supabase/functions/admin/index.ts"],
+        "acceptance": ["Registration snapshots price server-side.", "Cancellation preserves the snapshot."]
+      },
+      "commit_message": "feat: support enrollment transitions in admin API"
+    },
+    {
+      "id": "V1-003",
+      "title": "Add admin course settings API",
+      "repository": "backend",
+      "depends_on": ["V1-001"],
+      "files": {
+        "create": ["supabase/functions/admin-courses/index.ts"],
+        "modify": ["supabase/config.toml"],
+        "delete": []
+      },
+      "steps": ["Implement authenticated GET and PATCH with validation and audit logs."],
+      "verification": {
+        "commands": ["deno check supabase/functions/admin-courses/index.ts"],
+        "acceptance": ["Negative price/capacity is rejected.", "Valid changes are returned in the response."]
+      },
+      "commit_message": "feat: add admin course settings API"
+    },
+    {
+      "id": "V1-004",
+      "title": "Add monthly admin statistics API",
+      "repository": "backend",
+      "depends_on": ["V1-001"],
+      "files": {
+        "create": ["supabase/functions/admin-stats/index.ts"],
+        "modify": ["supabase/config.toml"],
+        "delete": []
+      },
+      "steps": ["Aggregate monthly applications, registrations, revenue, consultations, ages, and course metrics in KST."],
+      "verification": {
+        "commands": ["deno check supabase/functions/admin-stats/index.ts"],
+        "acceptance": ["Response includes period, generated_at, and timezone.", "Revenue uses registered_price snapshots."]
+      },
+      "commit_message": "feat: add monthly admin statistics API"
+    },
+    {
+      "id": "V1-005",
+      "title": "Connect frontend types, APIs, and reusable query states",
+      "repository": "frontend",
+      "depends_on": ["V1-002", "V1-003", "V1-004"],
+      "files": {
+        "create": ["src/app/lib/useCourses.ts", "src/app/lib/useAdminStats.ts", "src/app/components/LoadError.tsx"],
+        "modify": ["src/app/lib/types.ts", "src/app/lib/api.ts", "src/app/lib/useApplications.ts", "src/app/App.tsx"],
+        "delete": []
+      },
+      "steps": ["Add typed API wrappers.", "Expose retry and last successful update.", "Mount the global toaster."],
+      "verification": {
+        "commands": ["npm.cmd run build"],
+        "acceptance": ["Failed queries are distinguishable from empty data."]
+      },
+      "commit_message": "feat: add reliable admin data layer"
+    },
+    {
+      "id": "V1-006",
+      "title": "Replace dashboard and statistics with operational data",
+      "repository": "frontend",
+      "depends_on": ["V1-005"],
+      "files": {
+        "create": [],
+        "modify": ["src/app/pages/DashboardPage.tsx", "src/app/pages/StatsPage.tsx", "src/app/lib/transform.ts"],
+        "delete": []
+      },
+      "steps": ["Use real registration revenue.", "Use monthly statistics API.", "Remove unsupported change badges and sample arrays."],
+      "verification": {
+        "commands": ["npm.cmd run build"],
+        "acceptance": ["No hard-coded operational metrics remain."]
+      },
+      "commit_message": "feat: show real dashboard and monthly statistics"
+    },
+    {
+      "id": "V1-007",
+      "title": "Correct applicant workflows and feedback",
+      "repository": "frontend",
+      "depends_on": ["V1-005"],
+      "files": {
+        "create": [],
+        "modify": [
+          "src/app/pages/ApplicationsPage.tsx",
+          "src/app/pages/CourseDetailPage.tsx",
+          "src/app/components/ApplicantTable.tsx",
+          "src/app/components/ApplicantDetailSheet.tsx",
+          "src/app/components/ApplicantCalendar.tsx"
+        ],
+        "delete": []
+      },
+      "steps": ["Separate consultation/enrollment statuses.", "Remove empty email.", "Add keyboard selection.", "Add success/failure feedback."],
+      "verification": {
+        "commands": ["npm.cmd run build"],
+        "acceptance": ["Calendar failures are visible.", "Enrollment can be changed from applicant detail."]
+      },
+      "commit_message": "feat: improve applicant management workflow"
+    },
+    {
+      "id": "V1-008",
+      "title": "Add course settings screen and accessibility fixes",
+      "repository": "frontend",
+      "depends_on": ["V1-005"],
+      "files": {
+        "create": ["src/app/pages/CourseSettingsPage.tsx"],
+        "modify": ["src/app/routes.ts", "src/app/components/Header.tsx", "src/app/components/NotificationPanel.tsx"],
+        "delete": []
+      },
+      "steps": ["Connect settings icon.", "Add editable course table.", "Add Korean accessible labels to icon buttons."],
+      "verification": {
+        "commands": ["npm.cmd run build"],
+        "acceptance": ["Course settings persist through the API.", "Icon-only buttons have accessible names."]
+      },
+      "commit_message": "feat: add course settings and accessibility labels"
+    },
+    {
+      "id": "V1-009",
+      "title": "Run end-to-end verification",
+      "repository": "both",
+      "depends_on": ["V1-006", "V1-007", "V1-008"],
+      "files": {
+        "create": [],
+        "modify": [],
+        "delete": []
+      },
+      "steps": ["Run tests and builds in both repositories.", "Verify registration snapshot, cancellation, retry, stats, and course settings manually."],
+      "verification": {
+        "commands": ["npm.cmd test", "npm.cmd run build"],
+        "acceptance": ["All automated checks pass.", "No existing user changes are reverted."]
+      },
+      "commit_message": ""
+    }
+  ]
+}

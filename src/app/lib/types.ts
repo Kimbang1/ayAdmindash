@@ -8,14 +8,61 @@ export interface Application {
   phone: string
   address: string
   military: string | null
+  has_training_card: boolean
   national_employment: boolean
   employment_hours: string
   motivation: string | null
   status: '접수' | '상담예정' | '상담완료'
+  enrollment_status: '미등록' | '등록' | '취소'
+  registered_at: string | null
+  registered_price: number | null
   memo: string | null
   kakao_link: string | null
   scheduled_date: string | null
-  courses: { name: string }
+  is_blacklisted: boolean
+  blacklist_reason: string | null
+  enrollment_date: string | null
+  courses: {
+    id?: number
+    slug?: string
+    name: string
+    duration?: string
+    capacity?: number
+    price?: number
+  }
+}
+
+export interface CourseConfig {
+  id: number
+  slug: string
+  name: string
+  duration: string
+  capacity: number
+  price: number
+}
+
+export interface AdminStats {
+  period: { month: string; start: string; end_exclusive: string }
+  generated_at: string
+  timezone: 'Asia/Seoul'
+  summary: {
+    applications: number
+    registrations: number
+    revenue: number
+    consultations: number
+  }
+  consultation_statuses: Record<Application['status'], number>
+  enrollment_statuses: Record<Application['enrollment_status'], number>
+  consultation_daily: Array<{ date: string; count: number }>
+  age_distribution: Array<{ label: string; count: number }>
+  courses: Array<{
+    course_id: number
+    name: string
+    applications: number
+    registered: number
+    registration_rate: number
+    average_age: number | null
+  }>
 }
 
 export interface SecurityLog {
@@ -32,6 +79,15 @@ export interface ConsultationLog {
   id: string
   application_id: string
   content: string
+  consultation_date: string
+  created_at: string
+}
+
+export interface CallbackLog {
+  id: string
+  application_id: string
+  callback_date: string
+  memo: string
   created_at: string
 }
 
