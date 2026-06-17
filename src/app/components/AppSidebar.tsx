@@ -1,4 +1,4 @@
-import { LayoutDashboard, ClipboardList, BarChart2 } from "lucide-react";
+import { LayoutDashboard, ClipboardList, BarChart2, BookOpen } from "lucide-react";
 import { useNavigate, useLocation } from "react-router";
 import {
   Sidebar,
@@ -15,6 +15,7 @@ const menuItems = [
   { title: "대시보드", icon: LayoutDashboard, path: "/" },
   { title: "신청 현황", icon: ClipboardList, path: "/applications" },
   { title: "상담 & 연령 통계", icon: BarChart2, path: "/stats" },
+  { title: "강좌 등록하기", icon: BookOpen, path: "/courses" },
 ];
 
 export function AppSidebar() {

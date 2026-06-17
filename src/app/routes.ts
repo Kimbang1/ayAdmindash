@@ -5,7 +5,6 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { ApplicationsPage } from "./pages/ApplicationsPage";
 import { StatsPage } from "./pages/StatsPage";
 import { CourseDetailPage } from "./pages/CourseDetailPage";
-import { CourseSettingsPage } from "./pages/CourseSettingsPage";
 import { ApplicantDetailPage } from "./pages/ApplicantDetailPage";
 import { CourseManagementPage } from "./pages/CourseManagementPage";
 
@@ -20,7 +19,6 @@ export const router = createBrowserRouter([
       { path: "applications", Component: ApplicationsPage },
       { path: "stats", Component: StatsPage },
       { path: "course/:id", Component: CourseDetailPage },
-      { path: "settings/courses", Component: CourseSettingsPage },
       { path: "courses", Component: CourseManagementPage },
     ],
   },
