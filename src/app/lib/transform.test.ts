@@ -3,8 +3,18 @@ import { toApplicants, toCourses } from "./transform";
 import type { Application, CourseConfig } from "./types";
 
 const courses: CourseConfig[] = [
-  { id: 1, slug: "computer", name: "컴퓨터 활용", duration: "3개월", capacity: 2, price: 100000 },
-  { id: 2, slug: "figma", name: "Figma UI/UX", duration: "3개월", capacity: 10, price: 200000 },
+  {
+    id: 1, slug: "computer", name: "컴퓨터 활용",
+    recruitment_start: "2026-06-01", recruitment_end: "2026-06-30",
+    training_start: "2026-07-01", training_end: "2026-09-30",
+    capacity: 2, price: 100000, instructor: "홍길동", location: "서울", is_active: true,
+  },
+  {
+    id: 2, slug: "figma", name: "Figma UI/UX",
+    recruitment_start: "2026-06-01", recruitment_end: "2026-06-30",
+    training_start: "2026-07-01", training_end: "2026-09-30",
+    capacity: 10, price: 200000, instructor: null, location: null, is_active: false,
+  },
 ];
 
 function application(
@@ -71,6 +81,17 @@ describe("toCourses", () => {
 
     expect(result[0]).toMatchObject({ newApplicants: 0 });
   });
+
+  it("is_active가 false인 강좌는 결과에 포함하지 않는다", () => {
+    const result = toCourses([], courses)
+    expect(result).toHaveLength(1)
+    expect(result[0].id).toBe("1")
+  })
+
+  it("trainingPeriod를 YYYY.MM.DD ~ YYYY.MM.DD 형식으로 반환한다", () => {
+    const result = toCourses([], courses)
+    expect(result[0].trainingPeriod).toBe("2026.07.01 ~ 2026.09.30")
+  })
 });
 
 describe("toApplicants", () => {

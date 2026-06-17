@@ -4,7 +4,7 @@ export interface Course {
   id: string
   title: string
   category: string
-  duration: string
+  trainingPeriod: string
   applicants: number
   newApplicants: number
   status: '모집중' | '마감임박' | '마감'
@@ -23,6 +23,14 @@ export interface Applicant {
   consultationStatus: Application['status']
   enrollmentStatus: Application['enrollment_status']
   isAdditionalCourse: boolean
+}
+
+function formatPeriod(start: string | null, end: string | null): string {
+  if (!start && !end) return '기간 미정'
+  const fmt = (d: string) => d.replace(/-/g, '.')
+  if (!start) return `~ ${fmt(end!)}`
+  if (!end) return `${fmt(start)} ~`
+  return `${fmt(start)} ~ ${fmt(end)}`
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -53,20 +61,22 @@ export function toCourses(
   configs: CourseConfig[],
   newApplicationIds: Set<string> = new Set()
 ): Course[] {
-  return configs.map((config) => {
-    const courseApplications = applications.filter((application) => application.course_id === config.id)
-    return {
-      id: String(config.id),
-      title: config.name,
-      category: CATEGORY_LABELS[config.slug] ?? config.name,
-      duration: config.duration,
-      applicants: courseApplications.length,
-      newApplicants: courseApplications.filter((application) => newApplicationIds.has(application.id)).length,
-      status: computeCourseStatus(courseApplications.length, config.capacity),
-      maxCapacity: config.capacity,
-      price: config.price,
-    }
-  })
+  return configs
+    .filter((config) => config.is_active)
+    .map((config) => {
+      const courseApplications = applications.filter((a) => a.course_id === config.id)
+      return {
+        id: String(config.id),
+        title: config.name,
+        category: CATEGORY_LABELS[config.slug] ?? config.name,
+        trainingPeriod: formatPeriod(config.training_start, config.training_end),
+        applicants: courseApplications.length,
+        newApplicants: courseApplications.filter((a) => newApplicationIds.has(a.id)).length,
+        status: computeCourseStatus(courseApplications.length, config.capacity),
+        maxCapacity: config.capacity,
+        price: config.price,
+      }
+    })
 }
 
 export function toApplicants(
