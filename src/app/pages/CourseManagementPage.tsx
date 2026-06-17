@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { BookOpen, Plus, Trash2 } from "lucide-react"
+import { BookOpen, Pencil, Plus, Trash2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { Button } from "../components/ui/button"
 import { Input } from "../components/ui/input"
@@ -26,9 +26,8 @@ const EMPTY_FORM = {
 
 function validateForm(form: typeof EMPTY_FORM): string | null {
   if (!form.name.trim()) return "강좌명을 입력해주세요"
-  if (!form.recruitment_start) return "모집 시작일을 선택해주세요"
-  if (!form.recruitment_end) return "모집 종료일을 선택해주세요"
-  if (form.recruitment_end < form.recruitment_start) return "모집 종료일이 시작일보다 빠릅니다"
+  if (form.recruitment_start && form.recruitment_end && form.recruitment_end < form.recruitment_start)
+    return "모집 종료일이 시작일보다 빠릅니다"
   if (!form.training_start) return "교육 시작일을 선택해주세요"
   if (!form.training_end) return "교육 종료일을 선택해주세요"
   if (form.training_end < form.training_start) return "교육 종료일이 시작일보다 빠릅니다"
@@ -41,6 +40,7 @@ export function CourseManagementPage() {
   const { token } = useAuth()
   const coursesQuery = useCourses()
   const [showForm, setShowForm] = useState(false)
+  const [editingCourse, setEditingCourse] = useState<CourseConfig | null>(null)
   const [form, setForm] = useState(EMPTY_FORM)
   const [submitting, setSubmitting] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
@@ -49,6 +49,29 @@ export function CourseManagementPage() {
   const updateField = (field: keyof typeof EMPTY_FORM, value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }))
 
+  const closeForm = () => {
+    setShowForm(false)
+    setEditingCourse(null)
+    setForm(EMPTY_FORM)
+  }
+
+  const handleEdit = (course: CourseConfig) => {
+    setForm({
+      name: course.name,
+      recruitment_start: course.recruitment_start ?? "",
+      recruitment_end: course.recruitment_end ?? "",
+      training_start: course.training_start ?? "",
+      training_end: course.training_end ?? "",
+      capacity: String(course.capacity),
+      price: String(course.price),
+      instructor: course.instructor ?? "",
+      location: course.location ?? "",
+    })
+    setEditingCourse(course)
+    setShowForm(true)
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const validationError = validateForm(form)
@@ -56,23 +79,42 @@ export function CourseManagementPage() {
     if (!token) return
     setSubmitting(true)
     try {
-      const response = await createCourse(token, {
-        name: form.name.trim(),
-        recruitment_start: form.recruitment_start,
-        recruitment_end: form.recruitment_end,
-        training_start: form.training_start,
-        training_end: form.training_end,
-        capacity: Number(form.capacity),
-        price: Number(form.price),
-        instructor: form.instructor.trim() || undefined,
-        location: form.location.trim() || undefined,
-      })
-      coursesQuery.setCourses((prev) => [response.course, ...prev])
-      setForm(EMPTY_FORM)
-      setShowForm(false)
-      toast.success(`${response.course.name} 강좌가 등록되었습니다`)
+      if (editingCourse) {
+        const response = await updateAdminCourse(token, {
+          id: editingCourse.id,
+          name: form.name.trim(),
+          recruitment_start: form.recruitment_start || null,
+          recruitment_end: form.recruitment_end || null,
+          training_start: form.training_start,
+          training_end: form.training_end,
+          capacity: Number(form.capacity),
+          price: Number(form.price),
+          instructor: form.instructor.trim() || null,
+          location: form.location.trim() || null,
+        })
+        coursesQuery.setCourses((prev) =>
+          prev.map((c) => (c.id === response.course.id ? response.course : c))
+        )
+        closeForm()
+        toast.success(`${response.course.name} 강좌가 수정되었습니다`)
+      } else {
+        const response = await createCourse(token, {
+          name: form.name.trim(),
+          recruitment_start: form.recruitment_start || undefined,
+          recruitment_end: form.recruitment_end || undefined,
+          training_start: form.training_start,
+          training_end: form.training_end,
+          capacity: Number(form.capacity),
+          price: Number(form.price),
+          instructor: form.instructor.trim() || undefined,
+          location: form.location.trim() || undefined,
+        })
+        coursesQuery.setCourses((prev) => [response.course, ...prev])
+        closeForm()
+        toast.success(`${response.course.name} 강좌가 등록되었습니다`)
+      }
     } catch (err: unknown) {
-      toast.error((err as { message?: string }).message ?? "등록에 실패했습니다")
+      toast.error((err as { message?: string }).message ?? (editingCourse ? "수정에 실패했습니다" : "등록에 실패했습니다"))
     } finally {
       setSubmitting(false)
     }
@@ -126,7 +168,7 @@ export function CourseManagementPage() {
             </div>
           </div>
           <Button
-            onClick={() => setShowForm((v) => !v)}
+            onClick={() => { setEditingCourse(null); setForm(EMPTY_FORM); setShowForm((v) => !v) }}
             className="bg-white text-slate-800 hover:bg-slate-100"
           >
             <Plus className="h-4 w-4 mr-1" />
@@ -146,7 +188,9 @@ export function CourseManagementPage() {
       {showForm && (
         <Card className="border-2 border-blue-200">
           <CardHeader className="bg-blue-50 rounded-t-xl">
-            <CardTitle className="text-base text-blue-800">새 강좌 등록</CardTitle>
+            <CardTitle className="text-base text-blue-800">
+              {editingCourse ? `강좌 수정 — ${editingCourse.name}` : "새 강좌 등록"}
+            </CardTitle>
           </CardHeader>
           <CardContent className="pt-6">
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -249,13 +293,11 @@ export function CourseManagementPage() {
               </div>
               <div className="flex gap-2 pt-2">
                 <Button type="submit" disabled={submitting}>
-                  {submitting ? "등록 중..." : "등록"}
+                  {submitting
+                    ? (editingCourse ? "수정 중..." : "등록 중...")
+                    : (editingCourse ? "수정 완료" : "등록")}
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => { setShowForm(false); setForm(EMPTY_FORM) }}
-                >
+                <Button type="button" variant="outline" onClick={closeForm}>
                   취소
                 </Button>
               </div>
@@ -317,6 +359,14 @@ export function CourseManagementPage() {
                         onCheckedChange={() => handleToggleActive(course)}
                       />
                     </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                      onClick={() => handleEdit(course)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
                     <Button
                       size="sm"
                       variant="ghost"

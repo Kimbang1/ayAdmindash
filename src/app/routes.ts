@@ -6,7 +6,8 @@ import { ApplicationsPage } from "./pages/ApplicationsPage";
 import { StatsPage } from "./pages/StatsPage";
 import { CourseDetailPage } from "./pages/CourseDetailPage";
 import { ApplicantDetailPage } from "./pages/ApplicantDetailPage";
-import { CourseManagementPage } from "./pages/CourseManagementPage";
+import { CourseManagementPage } from "./pages/CourseManagementPage"
+import { BlacklistPage } from "./pages/BlacklistPage";
 
 export const router = createBrowserRouter([
   { path: "/login", Component: LoginPage },
@@ -20,6 +21,7 @@ export const router = createBrowserRouter([
       { path: "stats", Component: StatsPage },
       { path: "course/:id", Component: CourseDetailPage },
       { path: "courses", Component: CourseManagementPage },
+      { path: "blacklist", Component: BlacklistPage },
     ],
   },
 ]);

@@ -86,6 +86,11 @@ export const updateApplication = (
     body: JSON.stringify(body),
   })
 
+export const getBlacklistedApplications = (token: string) =>
+  callEdge<{ applications: import('./types').Application[] }>('/admin?is_blacklisted=true', {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+
 export const getAdminCourses = (token: string) =>
   callEdge<{ courses: CourseConfig[] }>('/admin-courses', {
     headers: { Authorization: `Bearer ${token}` },

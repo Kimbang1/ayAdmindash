@@ -140,7 +140,14 @@ export function ApplicantTable({
                 } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500`}
               >
                 <td className="px-4 py-3 text-gray-400 text-xs">{a.id}</td>
-                <td className="px-4 py-3 font-medium text-gray-900">{a.name}</td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-medium text-gray-900">{a.name}</span>
+                    {a.isBlacklisted && (
+                      <span className="text-xs px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-200 shrink-0">블랙</span>
+                    )}
+                  </div>
+                </td>
                 <td className="px-4 py-3 text-gray-600">{a.age}세</td>
                 <td className="px-4 py-3 text-gray-600">{a.phone}</td>
                 <td className="px-4 py-3 text-gray-600">{a.appliedDate}</td>

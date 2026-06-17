@@ -23,6 +23,8 @@ export interface Applicant {
   consultationStatus: Application['status']
   enrollmentStatus: Application['enrollment_status']
   isAdditionalCourse: boolean
+  isBlacklisted: boolean
+  blacklistReason: string | null
 }
 
 function formatPeriod(start: string | null, end: string | null): string {
@@ -102,5 +104,7 @@ export function toApplicants(
     consultationStatus: application.status,
     enrollmentStatus: application.enrollment_status,
     isAdditionalCourse: (registeredCoursesByPhone.get(application.phone)?.size ?? 0) > 1,
+    isBlacklisted: application.is_blacklisted,
+    blacklistReason: application.blacklist_reason,
   }))
 }
