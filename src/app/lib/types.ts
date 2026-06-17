@@ -26,7 +26,6 @@ export interface Application {
     id?: number
     slug?: string
     name: string
-    duration?: string
     capacity?: number
     price?: number
   }
@@ -36,9 +35,15 @@ export interface CourseConfig {
   id: number
   slug: string
   name: string
-  duration: string
+  recruitment_start: string | null
+  recruitment_end: string | null
+  training_start: string | null
+  training_end: string | null
   capacity: number
   price: number
+  instructor: string | null
+  location: string | null
+  is_active: boolean
 }
 
 export interface AdminStats {
