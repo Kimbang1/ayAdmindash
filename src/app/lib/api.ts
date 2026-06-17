@@ -141,6 +141,13 @@ export const updateConsultationDate = (
     }),
   })
 
+export const deleteConsultation = (token: string, logId: string) =>
+  callEdge<{ ok: boolean }>('/admin-consultations', {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ id: logId }),
+  })
+
 export const getCallbacks = (token: string, applicationId: string): Promise<{ logs: CallbackLog[] }> =>
   callEdge<{ logs: CallbackLog[] }>(`/admin-callbacks?application_id=${applicationId}`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -160,6 +167,13 @@ export const addCallback = (
       callback_date: callbackDate,
       memo,
     }),
+  })
+
+export const deleteCallback = (token: string, logId: string) =>
+  callEdge<{ ok: boolean }>('/admin-callbacks', {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ id: logId }),
   })
 
 export const getLogs = (

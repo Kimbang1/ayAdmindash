@@ -1,27 +1,26 @@
-import { useState } from "react";
-import { createPortal } from "react-dom";
-import { Rnd } from "react-rnd";
+import { useEffect, useState } from "react";
+import { Navigate, useParams } from "react-router";
 import { Ban, CalendarCheck2, CalendarClock, MessageCircle, PhoneIncoming, X } from "lucide-react";
 import { toast } from "sonner";
 
-import { useAuth } from "../../lib/auth";
-import { updateApplication } from "../../lib/api";
-import { calcAge } from "../../lib/transform";
-import type { Application } from "../../lib/types";
-import type { DetailWindowGeometry, DetailWindowState } from "../../lib/detailWindowsReducer";
+import { useAuth } from "../lib/auth";
+import { useApplications } from "../lib/useApplications";
+import { updateApplication } from "../lib/api";
+import { calcAge } from "../lib/transform";
+import type { Application, ApplicationSaveFields } from "../lib/types";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../ui/select";
-import { cn } from "../ui/utils";
-import { ConsultationTab } from "./ConsultationTab";
-import { EnrollmentTab } from "./EnrollmentTab";
-import { CallbackTab } from "./CallbackTab";
-import { KakaoLinkTab } from "./KakaoLinkTab";
-import { BlacklistTab } from "./BlacklistTab";
+} from "../components/ui/select";
+import { cn } from "../components/ui/utils";
+import { ConsultationTab } from "../components/applicant-detail/ConsultationTab";
+import { EnrollmentTab } from "../components/applicant-detail/EnrollmentTab";
+import { CallbackTab } from "../components/applicant-detail/CallbackTab";
+import { KakaoLinkTab } from "../components/applicant-detail/KakaoLinkTab";
+import { BlacklistTab } from "../components/applicant-detail/BlacklistTab";
 
 const TABS = [
   { id: "consultation", label: "상담예약", icon: CalendarClock, accent: "text-blue-600", activeBg: "bg-blue-50 border-blue-200" },
@@ -33,42 +32,30 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]["id"];
 
-export type ApplicationSaveFields = Partial<
-  Pick<
-    Application,
-    "status" | "enrollment_status" | "scheduled_date" | "enrollment_date" | "is_blacklisted" | "blacklist_reason"
-  >
-> & {
-  kakao_link?: string;
-};
-
-interface ApplicantDetailWindowProps {
-  application: Application;
-  geometry: DetailWindowState;
-  onClose: () => void;
-  onFocus: () => void;
-  onGeometryChange: (geometry: DetailWindowGeometry) => void;
-  onUpdated: (application: Application) => void;
-}
-
-export function ApplicantDetailWindow({
-  application,
-  geometry,
-  onClose,
-  onFocus,
-  onGeometryChange,
-  onUpdated,
-}: ApplicantDetailWindowProps) {
+export function ApplicantDetailPage() {
+  const { id, applicationId } = useParams<{ id: string; applicationId: string }>();
   const { token } = useAuth();
+  const applicationsQuery = useApplications(Number(id));
   const [activeTab, setActiveTab] = useState<TabId>("consultation");
   const [saving, setSaving] = useState(false);
+  const [application, setApplication] = useState<Application | null>(null);
+
+  useEffect(() => {
+    if (!applicationId) return;
+    window.opener?.postMessage({ type: "applicant-seen", applicationId }, window.location.origin);
+  }, [applicationId]);
+
+  if (!token) return <Navigate to="/login" replace />;
+
+  const current = application ?? applicationsQuery.applications.find((item) => item.id === applicationId);
 
   const handleSave = async (updates: ApplicationSaveFields) => {
-    if (!token || saving) return;
+    if (!token || saving || !applicationId) return;
     setSaving(true);
     try {
-      const response = await updateApplication(token, { id: application.id, ...updates });
-      onUpdated(response.application);
+      const response = await updateApplication(token, { id: applicationId, ...updates });
+      setApplication(response.application);
+      window.opener?.postMessage({ type: "applicant-updated", applicationId }, window.location.origin);
       toast.success("신청자 정보를 저장했습니다");
     } catch (err: unknown) {
       toast.error((err as { message?: string }).message ?? "신청자 정보를 저장하지 못했습니다");
@@ -77,32 +64,20 @@ export function ApplicantDetailWindow({
     }
   };
 
-  return createPortal(
-    <Rnd
-      style={{ zIndex: geometry.zIndex }}
-      size={{ width: geometry.width, height: geometry.height }}
-      position={{ x: geometry.x, y: geometry.y }}
-      minWidth={420}
-      minHeight={480}
-      bounds="window"
-      dragHandleClassName="applicant-detail-window-handle"
-      onDragStop={(_e, d) => onGeometryChange({ x: d.x, y: d.y })}
-      onResizeStop={(_e, _dir, ref, _delta, position) =>
-        onGeometryChange({
-          width: ref.offsetWidth,
-          height: ref.offsetHeight,
-          x: position.x,
-          y: position.y,
-        })
-      }
-      onMouseDown={onFocus}
-      className="flex flex-col overflow-hidden rounded-lg border border-gray-200 bg-white shadow-2xl"
-    >
-      <div className="applicant-detail-window-handle flex shrink-0 cursor-move items-center justify-between border-b border-gray-200 bg-gray-50 px-4 py-2">
-        <span className="truncate text-sm font-semibold text-gray-900">{application.name} 상세 정보</span>
+  if (applicationsQuery.loading && !current) {
+    return <div className="flex h-screen items-center justify-center text-gray-400">불러오는 중...</div>;
+  }
+  if (!current) {
+    return <div className="flex h-screen items-center justify-center text-gray-400">신청자를 찾을 수 없습니다.</div>;
+  }
+
+  return (
+    <div className="min-h-screen w-full bg-white">
+      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-gray-50 px-4 py-2">
+        <span className="truncate text-sm font-semibold text-gray-900">{current.name} 상세 정보</span>
         <button
           type="button"
-          onClick={onClose}
+          onClick={() => window.close()}
           className="rounded p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-700"
           aria-label="닫기"
         >
@@ -110,49 +85,48 @@ export function ApplicantDetailWindow({
         </button>
       </div>
 
-      <div className="flex h-full min-h-0 flex-col p-6">
-        {/* TOP: 설문 결과 + 업무 상태 (더보기 없이 전체 표시) */}
-        <div className="shrink-0 space-y-4 overflow-y-auto">
+      <div className="flex flex-col p-6">
+        <div className="space-y-4">
           <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
             <div>
               <dt className="text-xs text-gray-400">이름</dt>
-              <dd className="text-gray-900">{application.name}</dd>
+              <dd className="text-gray-900">{current.name}</dd>
             </div>
             <div>
               <dt className="text-xs text-gray-400">나이</dt>
-              <dd className="text-gray-900">{calcAge(application.birth_date)}세</dd>
+              <dd className="text-gray-900">{calcAge(current.birth_date)}세</dd>
             </div>
             <div>
               <dt className="text-xs text-gray-400">성별</dt>
-              <dd className="text-gray-900">{application.gender}</dd>
+              <dd className="text-gray-900">{current.gender}</dd>
             </div>
             <div>
               <dt className="text-xs text-gray-400">연락처</dt>
-              <dd className="text-gray-900">{application.phone}</dd>
+              <dd className="text-gray-900">{current.phone}</dd>
             </div>
             <div className="col-span-2">
               <dt className="text-xs text-gray-400">주소</dt>
-              <dd className="text-gray-900">{application.address}</dd>
+              <dd className="text-gray-900">{current.address}</dd>
             </div>
             <div>
               <dt className="text-xs text-gray-400">병역</dt>
-              <dd className="text-gray-900">{application.military ?? "-"}</dd>
+              <dd className="text-gray-900">{current.military ?? "-"}</dd>
             </div>
             <div>
               <dt className="text-xs text-gray-400">내일배움카드</dt>
-              <dd className="text-gray-900">{application.has_training_card ? "보유" : "미보유"}</dd>
+              <dd className="text-gray-900">{current.has_training_card ? "보유" : "미보유"}</dd>
             </div>
             <div>
               <dt className="text-xs text-gray-400">국민취업지원제도</dt>
-              <dd className="text-gray-900">{application.national_employment ? "예" : "아니오"}</dd>
+              <dd className="text-gray-900">{current.national_employment ? "예" : "아니오"}</dd>
             </div>
             <div>
               <dt className="text-xs text-gray-400">희망 근무시간</dt>
-              <dd className="text-gray-900">{application.employment_hours}</dd>
+              <dd className="text-gray-900">{current.employment_hours}</dd>
             </div>
             <div className="col-span-2">
               <dt className="text-xs text-gray-400">지원 동기</dt>
-              <dd className="whitespace-pre-wrap text-gray-900">{application.motivation ?? "-"}</dd>
+              <dd className="whitespace-pre-wrap text-gray-900">{current.motivation ?? "-"}</dd>
             </div>
           </dl>
 
@@ -160,7 +134,7 @@ export function ApplicantDetailWindow({
             <label className="space-y-1">
               <span className="text-xs text-gray-500">상담 상태</span>
               <Select
-                value={application.status}
+                value={current.status}
                 disabled={saving}
                 onValueChange={(value) => handleSave({ status: value as Application["status"] })}
               >
@@ -175,7 +149,7 @@ export function ApplicantDetailWindow({
             <label className="space-y-1">
               <span className="text-xs text-gray-500">등록 상태</span>
               <Select
-                value={application.enrollment_status}
+                value={current.enrollment_status}
                 disabled={saving}
                 onValueChange={(value) =>
                   handleSave({ enrollment_status: value as Application["enrollment_status"] })
@@ -189,18 +163,17 @@ export function ApplicantDetailWindow({
                 </SelectContent>
               </Select>
             </label>
-            {application.registered_price != null && (
+            {current.registered_price != null && (
               <p className="col-span-2 text-xs text-gray-500">
-                등록 금액: {application.registered_price.toLocaleString()}원
-                {application.registered_at
-                  ? ` · ${new Date(application.registered_at).toLocaleString("ko-KR")}`
+                등록 금액: {current.registered_price.toLocaleString()}원
+                {current.registered_at
+                  ? ` · ${new Date(current.registered_at).toLocaleString("ko-KR")}`
                   : ""}
               </p>
             )}
           </div>
         </div>
 
-        {/* MIDDLE: 탭 navbar — 컨테이너 너비에 맞춰 5등분 + 활성 탭 강조 */}
         <div className="mt-4 grid shrink-0 grid-cols-5 gap-1 rounded-xl border border-gray-200 bg-gray-100 p-1">
           {TABS.map((tab) => {
             const Icon = tab.icon;
@@ -224,24 +197,22 @@ export function ApplicantDetailWindow({
           })}
         </div>
 
-        {/* BOTTOM: 활성 탭 콘텐츠 */}
-        <div className="flex-1 overflow-y-auto p-5">
+        <div className="p-5">
           {activeTab === "consultation" && (
-            <ConsultationTab application={application} onSave={handleSave} saving={saving} />
+            <ConsultationTab application={current} onSave={handleSave} saving={saving} />
           )}
           {activeTab === "enrollment" && (
-            <EnrollmentTab application={application} onSave={handleSave} saving={saving} />
+            <EnrollmentTab application={current} onSave={handleSave} saving={saving} />
           )}
-          {activeTab === "callback" && <CallbackTab application={application} />}
+          {activeTab === "callback" && <CallbackTab application={current} />}
           {activeTab === "kakao" && (
-            <KakaoLinkTab application={application} onSave={handleSave} saving={saving} />
+            <KakaoLinkTab application={current} onSave={handleSave} saving={saving} />
           )}
           {activeTab === "blacklist" && (
-            <BlacklistTab application={application} onSave={handleSave} saving={saving} />
+            <BlacklistTab application={current} onSave={handleSave} saving={saving} />
           )}
         </div>
       </div>
-    </Rnd>,
-    document.body,
+    </div>
   );
 }

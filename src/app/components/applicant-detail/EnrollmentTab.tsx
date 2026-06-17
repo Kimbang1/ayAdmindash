@@ -1,6 +1,5 @@
-import type { Application } from "../../lib/types";
+import type { Application, ApplicationSaveFields } from "../../lib/types";
 import { DateFieldPopover } from "./DateFieldPopover";
-import type { ApplicationSaveFields } from "./ApplicantDetailWindow";
 
 interface EnrollmentTabProps {
   application: Application;

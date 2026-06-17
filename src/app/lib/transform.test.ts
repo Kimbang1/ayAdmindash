@@ -55,6 +55,22 @@ describe("toCourses", () => {
       status: "마감",
     });
   });
+
+  it("newApplicationIds에 포함된 신청만 newApplicants로 계산한다", () => {
+    const result = toCourses(
+      [application("a1", 1, "010-0000-0001"), application("a2", 1, "010-0000-0002")],
+      courses,
+      new Set(["a1"])
+    );
+
+    expect(result[0]).toMatchObject({ applicants: 2, newApplicants: 1 });
+  });
+
+  it("newApplicationIds를 생략하면 newApplicants는 0이다", () => {
+    const result = toCourses([application("a1", 1, "010-0000-0001")], courses);
+
+    expect(result[0]).toMatchObject({ newApplicants: 0 });
+  });
 });
 
 describe("toApplicants", () => {

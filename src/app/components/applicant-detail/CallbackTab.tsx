@@ -1,11 +1,23 @@
 import { useEffect, useState } from "react";
+import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAuth } from "../../lib/auth";
-import { addCallback, getCallbacks } from "../../lib/api";
+import { addCallback, deleteCallback, getCallbacks } from "../../lib/api";
 import type { Application, CallbackLog } from "../../lib/types";
 import { Textarea } from "../ui/textarea";
-import { Button } from "../ui/button";
+import { Button, buttonVariants } from "../ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "../ui/alert-dialog";
 import { DateFieldPopover } from "./DateFieldPopover";
 
 interface CallbackTabProps {
@@ -44,6 +56,19 @@ export function CallbackTab({ application }: CallbackTabProps) {
     };
   }, [token, application.id]);
 
+  const handleDeleteLog = (logId: string) => {
+    if (!token) return;
+    deleteCallback(token, logId)
+      .then(() => {
+        setLogs((prev) => prev.filter((log) => log.id !== logId));
+        toast.success("재전화문의 이력을 삭제했습니다");
+      })
+      .catch((err) => {
+        console.error("재전화문의 이력 삭제 실패:", err);
+        toast.error("재전화문의 이력을 삭제하지 못했습니다");
+      });
+  };
+
   const handleSubmit = () => {
     if (!token || !memo.trim() || submitting) return;
     setSubmitting(true);
@@ -76,9 +101,33 @@ export function CallbackTab({ application }: CallbackTabProps) {
           {logs.map((log) => (
             <li key={log.id} className="rounded-md border border-amber-100 bg-white p-3 text-sm">
               <p className="whitespace-pre-wrap text-gray-900">{log.memo}</p>
-              <p className="mt-1 text-xs text-gray-400">
-                재전화일 {log.callback_date} · {new Date(log.created_at).toLocaleString("ko-KR")}
-              </p>
+              <div className="mt-1 flex items-center gap-2">
+                <p className="text-xs text-gray-400">
+                  재전화일 {log.callback_date} · {new Date(log.created_at).toLocaleString("ko-KR")}
+                </p>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="ml-auto size-8 text-gray-400 hover:text-red-600">
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>재전화문의 이력을 삭제하시겠습니까?</AlertDialogTitle>
+                      <AlertDialogDescription>삭제한 이력은 복구할 수 없습니다.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>취소</AlertDialogCancel>
+                      <AlertDialogAction
+                        className={buttonVariants({ variant: "destructive" })}
+                        onClick={() => handleDeleteLog(log.id)}
+                      >
+                        삭제
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             </li>
           ))}
         </ul>

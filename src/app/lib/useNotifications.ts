@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import type { Application } from './types'
 import { getApplications } from './api'
 import { useAuth } from './auth'
@@ -9,7 +9,9 @@ const POLL_INTERVAL_MS = 25000
 interface UseNotificationsResult {
   applications: Application[]
   newApplications: Application[]
+  newApplicationIds: Set<string>
   markAllSeen: () => void
+  markSeen: (applicationId: string) => void
 }
 
 function loadSeenIds(): { ids: Set<string>; existed: boolean } {
@@ -92,5 +94,31 @@ export function useNotifications(): UseNotificationsResult {
     setNewApplications([])
   }, [applications])
 
-  return { applications, newApplications, markAllSeen }
+  const markSeen = useCallback((applicationId: string) => {
+    const seen = seenIdsRef.current
+    if (seen.has(applicationId)) return
+    const updated = new Set(seen)
+    updated.add(applicationId)
+    seenIdsRef.current = updated
+    saveSeenIds(updated)
+    setNewApplications((prev) => prev.filter((a) => a.id !== applicationId))
+  }, [])
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return
+      if (event.data?.type === 'applicant-seen' && typeof event.data.applicationId === 'string') {
+        markSeen(event.data.applicationId)
+      }
+    }
+    window.addEventListener('message', handleMessage)
+    return () => window.removeEventListener('message', handleMessage)
+  }, [markSeen])
+
+  const newApplicationIds = useMemo(
+    () => new Set(newApplications.map((a) => a.id)),
+    [newApplications]
+  )
+
+  return { applications, newApplications, newApplicationIds, markAllSeen, markSeen }
 }

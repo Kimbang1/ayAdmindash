@@ -1,13 +1,24 @@
 import { useEffect, useState } from "react";
+import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAuth } from "../../lib/auth";
-import { addConsultation, getConsultations, updateConsultationDate } from "../../lib/api";
-import type { Application, ConsultationLog } from "../../lib/types";
+import { addConsultation, deleteConsultation, getConsultations, updateConsultationDate } from "../../lib/api";
+import type { Application, ApplicationSaveFields, ConsultationLog } from "../../lib/types";
 import { Textarea } from "../ui/textarea";
-import { Button } from "../ui/button";
+import { Button, buttonVariants } from "../ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "../ui/alert-dialog";
 import { DateFieldPopover } from "./DateFieldPopover";
-import type { ApplicationSaveFields } from "./ApplicantDetailWindow";
 
 interface ConsultationTabProps {
   application: Application;
@@ -64,6 +75,19 @@ export function ConsultationTab({ application, onSave, saving }: ConsultationTab
       .finally(() => setSubmitting(false));
   };
 
+  const handleDeleteLog = (logId: string) => {
+    if (!token) return;
+    deleteConsultation(token, logId)
+      .then(() => {
+        setLogs((prev) => prev.filter((log) => log.id !== logId));
+        toast.success("상담 이력을 삭제했습니다");
+      })
+      .catch((err) => {
+        console.error("상담 이력 삭제 실패:", err);
+        toast.error("상담 이력을 삭제하지 못했습니다");
+      });
+  };
+
   const handleLogDateChange = (logId: string, date: string | null) => {
     if (!token || !date) return;
     updateConsultationDate(token, logId, date)
@@ -113,6 +137,28 @@ export function ConsultationTab({ application, onSave, saving }: ConsultationTab
                   <span className="text-xs text-gray-400">
                     {new Date(log.created_at).toLocaleString("ko-KR")}
                   </span>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="ml-auto size-8 text-gray-400 hover:text-red-600">
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>상담 이력을 삭제하시겠습니까?</AlertDialogTitle>
+                        <AlertDialogDescription>삭제한 이력은 복구할 수 없습니다.</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>취소</AlertDialogCancel>
+                        <AlertDialogAction
+                          className={buttonVariants({ variant: "destructive" })}
+                          onClick={() => handleDeleteLog(log.id)}
+                        >
+                          삭제
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </li>
             ))}

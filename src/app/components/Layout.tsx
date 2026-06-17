@@ -2,14 +2,10 @@ import { Outlet } from "react-router";
 import { Header } from "./Header";
 import { AppSidebar } from "./AppSidebar";
 import { SidebarProvider, SidebarTrigger } from "./ui/sidebar";
-import type { Application } from "../lib/types";
+import { useNotificationsContext } from "../lib/NotificationsContext";
 
-interface LayoutProps {
-  newApplications: Application[];
-  markAllSeen: () => void;
-}
-
-export function Layout({ newApplications, markAllSeen }: LayoutProps) {
+export function Layout() {
+  const { newApplications, markAllSeen } = useNotificationsContext();
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-gray-100">

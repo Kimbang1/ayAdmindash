@@ -33,7 +33,7 @@ export function LoginPage() {
             <div className="h-7 w-7 rounded-lg bg-blue-500 flex items-center justify-center">
               <span className="text-white text-sm font-bold">A</span>
             </div>
-            <h1 className="text-white text-xl font-semibold">EduAdmin</h1>
+            <h1 className="text-white text-xl font-semibold">하이미디어 안양</h1>
           </div>
           <p className="text-slate-400 text-sm">관리자 시스템</p>
         </div>

@@ -95,6 +95,15 @@ export interface GetApplicationsResponse {
   applications: Application[]
 }
 
+export type ApplicationSaveFields = Partial<
+  Pick<
+    Application,
+    'status' | 'enrollment_status' | 'scheduled_date' | 'enrollment_date' | 'is_blacklisted' | 'blacklist_reason'
+  >
+> & {
+  kakao_link?: string
+}
+
 export interface GetLogsResponse {
   logs: SecurityLog[]
   total: number

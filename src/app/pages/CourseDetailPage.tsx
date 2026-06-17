@@ -1,20 +1,20 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router";
 import { ArrowLeft, Download, TableIcon, CalendarIcon } from "lucide-react";
 import { Card, CardContent, CardHeader } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { ApplicantTable } from "../components/ApplicantTable";
 import { ApplicantCalendar } from "../components/ApplicantCalendar";
-import { ApplicantDetailWindow } from "../components/applicant-detail/ApplicantDetailWindow";
 import { LoadError } from "../components/LoadError";
 import { useApplications } from "../lib/useApplications";
 import { useCourses } from "../lib/useCourses";
 import { useAuth } from "../lib/auth";
-import { useDetailWindows } from "../lib/useDetailWindows";
 import { updateApplication } from "../lib/api";
 import { toApplicants } from "../lib/transform";
 import type { Applicant } from "../lib/transform";
 import { toast } from "sonner";
+
+const DETAIL_WINDOW_FEATURES = "width=560,height=900";
 
 function exportCSV(courseTitle: string, applicants: Applicant[]) {
   const header = "번호,이름,나이,연락처,신청일,상담상태,등록상태";
@@ -38,7 +38,7 @@ export function CourseDetailPage() {
   const [searchParams] = useSearchParams();
   const [tab, setTab] = useState<"table" | "calendar">("table");
   const [searchName, setSearchName] = useState("");
-  const { windows, openWindow, closeWindow, bringToFront, updateGeometry } = useDetailWindows();
+  const openedFromQueryRef = useRef<string | null>(null);
 
   const courseId = Number(id);
   const applicationsQuery = useApplications();
@@ -50,14 +50,31 @@ export function CourseDetailPage() {
   );
   const applicants = toApplicants(courseApplications, applicationsQuery.applications);
 
+  const openApplicantWindow = (applicationId: string) => {
+    window.open(`/course/${courseId}/applicants/${applicationId}`, "_blank", DETAIL_WINDOW_FEATURES);
+  };
+
   useEffect(() => {
     const applicationId = searchParams.get("application");
     if (!applicationId || applicationsQuery.loading) return;
+    if (openedFromQueryRef.current === applicationId) return;
     const application = applicationsQuery.applications.find((item) => item.id === applicationId);
     if (application) {
-      openWindow(application);
+      openedFromQueryRef.current = applicationId;
+      openApplicantWindow(applicationId);
     }
-  }, [searchParams, applicationsQuery.applications, applicationsQuery.loading, openWindow]);
+  }, [searchParams, applicationsQuery.applications, applicationsQuery.loading, courseId]);
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      if (event.data?.type === "applicant-updated") {
+        applicationsQuery.refresh();
+      }
+    };
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [applicationsQuery.refresh]);
 
   const handleScheduledDateChange = async (applicationId: string, newDate: string) => {
     if (!token) {
@@ -74,11 +91,7 @@ export function CourseDetailPage() {
   };
 
   const handleSelectApplicant = (applicant: Applicant) => {
-    const found = applicationsQuery.applications.find(
-      (application) => application.id === applicant.applicationId
-    );
-    if (!found) return;
-    openWindow(found);
+    openApplicantWindow(applicant.applicationId);
   };
 
   const filtered = useMemo(
@@ -198,24 +211,6 @@ export function CourseDetailPage() {
           )}
         </CardContent>
       </Card>
-
-      {windows.map((windowState) => {
-        const application = applicationsQuery.applications.find(
-          (item) => item.id === windowState.applicationId
-        );
-        if (!application) return null;
-        return (
-          <ApplicantDetailWindow
-            key={windowState.applicationId}
-            application={application}
-            geometry={windowState}
-            onClose={() => closeWindow(windowState.applicationId)}
-            onFocus={() => bringToFront(windowState.applicationId)}
-            onGeometryChange={(geometry) => updateGeometry(windowState.applicationId, geometry)}
-            onUpdated={() => applicationsQuery.refresh()}
-          />
-        );
-      })}
     </div>
   );
 }

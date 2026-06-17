@@ -18,6 +18,7 @@ import { useCourses } from "../lib/useCourses";
 import { useAdminStats } from "../lib/useAdminStats";
 import { toCourses } from "../lib/transform";
 import { LoadError } from "../components/LoadError";
+import { useNotificationsContext } from "../lib/NotificationsContext";
 import type { Application } from "../lib/types";
 
 const statusConfig = {
@@ -57,9 +58,10 @@ export function DashboardPage() {
   const applicationsQuery = useApplications();
   const coursesQuery = useCourses();
   const statsQuery = useAdminStats();
+  const { newApplicationIds } = useNotificationsContext();
 
   const { applications, loading, error, lastUpdated, refresh } = applicationsQuery;
-  const courses = toCourses(applications, coursesQuery.courses);
+  const courses = toCourses(applications, coursesQuery.courses, newApplicationIds);
   const registeredCoursesByPhone = new Map<string, Set<number>>();
   for (const application of applications) {
     if (application.enrollment_status !== "등록") continue;

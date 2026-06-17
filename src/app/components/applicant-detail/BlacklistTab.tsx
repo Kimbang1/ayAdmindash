@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 
-import type { Application } from "../../lib/types";
+import type { Application, ApplicationSaveFields } from "../../lib/types";
 import { Button } from "../ui/button";
 import { Switch } from "../ui/switch";
 import { Textarea } from "../ui/textarea";
-import type { ApplicationSaveFields } from "./ApplicantDetailWindow";
 
 interface BlacklistTabProps {
   application: Application;

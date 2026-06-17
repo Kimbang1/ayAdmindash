@@ -6,9 +6,11 @@ import { ApplicationsPage } from "./pages/ApplicationsPage";
 import { StatsPage } from "./pages/StatsPage";
 import { CourseDetailPage } from "./pages/CourseDetailPage";
 import { CourseSettingsPage } from "./pages/CourseSettingsPage";
+import { ApplicantDetailPage } from "./pages/ApplicantDetailPage";
 
 export const router = createBrowserRouter([
   { path: "/login", Component: LoginPage },
+  { path: "/course/:id/applicants/:applicationId", Component: ApplicantDetailPage },
   {
     path: "/",
     Component: ProtectedLayout,

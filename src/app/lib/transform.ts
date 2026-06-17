@@ -48,13 +48,11 @@ function computeCourseStatus(count: number, capacity: number): Course['status'] 
   return '모집중'
 }
 
-function isThisMonth(dateStr: string, now: Date): boolean {
-  const date = new Date(dateStr)
-  return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth()
-}
-
-export function toCourses(applications: Application[], configs: CourseConfig[]): Course[] {
-  const now = new Date()
+export function toCourses(
+  applications: Application[],
+  configs: CourseConfig[],
+  newApplicationIds: Set<string> = new Set()
+): Course[] {
   return configs.map((config) => {
     const courseApplications = applications.filter((application) => application.course_id === config.id)
     return {
@@ -63,7 +61,7 @@ export function toCourses(applications: Application[], configs: CourseConfig[]):
       category: CATEGORY_LABELS[config.slug] ?? config.name,
       duration: config.duration,
       applicants: courseApplications.length,
-      newApplicants: courseApplications.filter((application) => isThisMonth(application.created_at, now)).length,
+      newApplicants: courseApplications.filter((application) => newApplicationIds.has(application.id)).length,
       status: computeCourseStatus(courseApplications.length, config.capacity),
       maxCapacity: config.capacity,
       price: config.price,

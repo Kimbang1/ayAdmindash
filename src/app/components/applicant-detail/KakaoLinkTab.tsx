@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
 
-import type { Application } from "../../lib/types";
+import type { Application, ApplicationSaveFields } from "../../lib/types";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
-import type { ApplicationSaveFields } from "./ApplicantDetailWindow";
 
 interface KakaoLinkTabProps {
   application: Application;

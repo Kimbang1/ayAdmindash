@@ -8,6 +8,7 @@ import { useApplications } from "../lib/useApplications";
 import { useCourses } from "../lib/useCourses";
 import { toCourses } from "../lib/transform";
 import { LoadError } from "../components/LoadError";
+import { useNotificationsContext } from "../lib/NotificationsContext";
 
 const statusColors = {
   "모집중": "bg-emerald-100 text-emerald-700 border-emerald-200",
@@ -33,8 +34,9 @@ export function ApplicationsPage() {
   const navigate = useNavigate();
   const applicationsQuery = useApplications();
   const coursesQuery = useCourses();
+  const { newApplicationIds } = useNotificationsContext();
   const { applications, loading, error, refresh } = applicationsQuery;
-  const courses = toCourses(applications, coursesQuery.courses);
+  const courses = toCourses(applications, coursesQuery.courses, newApplicationIds);
 
   const filtered = courses.filter(
     (c) =>
@@ -44,7 +46,7 @@ export function ApplicationsPage() {
 
   const totalApplicants = courses.reduce((s, c) => s + c.applicants, 0);
   const activeCount = courses.filter((c) => c.status === "모집중").length;
-  const newThisMonth = courses.reduce((s, c) => s + c.newApplicants, 0);
+  const unseenNewCount = courses.reduce((s, c) => s + c.newApplicants, 0);
 
   if ((loading || coursesQuery.loading) && courses.length === 0) {
     return (
@@ -79,8 +81,8 @@ export function ApplicationsPage() {
             <div className="text-xs text-blue-200 mt-0.5">모집 중 강좌</div>
           </div>
           <div className="bg-white/15 rounded-xl p-3 text-center">
-            <div className="text-2xl font-bold text-white">+{newThisMonth}</div>
-            <div className="text-xs text-blue-200 mt-0.5">이번 달 신규 신청</div>
+            <div className="text-2xl font-bold text-white">+{unseenNewCount}</div>
+            <div className="text-xs text-blue-200 mt-0.5">확인 안 한 신규 신청</div>
           </div>
         </div>
       </div>
