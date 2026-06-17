@@ -7,6 +7,7 @@ import { StatsPage } from "./pages/StatsPage";
 import { CourseDetailPage } from "./pages/CourseDetailPage";
 import { CourseSettingsPage } from "./pages/CourseSettingsPage";
 import { ApplicantDetailPage } from "./pages/ApplicantDetailPage";
+import { CourseManagementPage } from "./pages/CourseManagementPage";
 
 export const router = createBrowserRouter([
   { path: "/login", Component: LoginPage },
@@ -20,6 +21,7 @@ export const router = createBrowserRouter([
       { path: "stats", Component: StatsPage },
       { path: "course/:id", Component: CourseDetailPage },
       { path: "settings/courses", Component: CourseSettingsPage },
+      { path: "courses", Component: CourseManagementPage },
     ],
   },
 ]);
