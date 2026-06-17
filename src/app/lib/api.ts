@@ -93,12 +93,41 @@ export const getAdminCourses = (token: string) =>
 
 export const updateAdminCourse = (
   token: string,
-  body: Pick<CourseConfig, 'id'> & Partial<Pick<CourseConfig, 'name' | 'duration' | 'capacity' | 'price'>>
+  body: Pick<CourseConfig, 'id'> & Partial<Pick<CourseConfig,
+    'name' | 'recruitment_start' | 'recruitment_end' | 'training_start' | 'training_end' |
+    'capacity' | 'price' | 'instructor' | 'location' | 'is_active'>>
 ) =>
   callEdge<{ course: CourseConfig }>('/admin-courses', {
     method: 'PATCH',
     headers: { Authorization: `Bearer ${token}` },
     body: JSON.stringify(body),
+  })
+
+export const createCourse = (
+  token: string,
+  body: {
+    name: string
+    recruitment_start: string
+    recruitment_end: string
+    training_start: string
+    training_end: string
+    capacity: number
+    price: number
+    instructor?: string
+    location?: string
+  }
+) =>
+  callEdge<{ course: CourseConfig }>('/admin-courses', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(body),
+  })
+
+export const deleteCourse = (token: string, id: number) =>
+  callEdge<{ ok: boolean }>('/admin-courses', {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ id }),
   })
 
 export const getAdminStats = (token: string, month?: string) =>
