@@ -141,7 +141,12 @@ export function CourseDetailPage() {
         <Badge className="mb-2 bg-white/20 text-white border-0">{courseConfig.slug}</Badge>
         <h1 className="text-white text-xl mb-1">{courseConfig.name}</h1>
         <div className="flex items-center gap-4 text-slate-300 text-sm">
-          <span>수강 기간: {courseConfig.duration}</span>
+          <span>
+            교육 기간:{" "}
+            {courseConfig.training_start && courseConfig.training_end
+              ? `${courseConfig.training_start.replace(/-/g, ".")} ~ ${courseConfig.training_end.replace(/-/g, ".")}`
+              : "기간 미정"}
+          </span>
           <span>수강료: {courseConfig.price.toLocaleString()}원</span>
           <span className="px-2 py-0.5 rounded-full text-xs bg-emerald-500/30 text-emerald-200">
             {courseStatus}

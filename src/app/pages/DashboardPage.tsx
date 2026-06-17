@@ -188,7 +188,7 @@ export function DashboardPage() {
                 <div className="flex-1 min-w-0">
                   <div className="text-sm text-gray-800 truncate">{course.title}</div>
                   <div className="text-xs text-gray-400 mt-0.5">
-                    {course.duration} · {course.price.toLocaleString()}원
+                    {course.trainingPeriod} · {course.price.toLocaleString()}원
                   </div>
                 </div>
                 <div className="flex items-center gap-2 ml-3 shrink-0">

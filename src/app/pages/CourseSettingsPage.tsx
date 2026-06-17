@@ -28,8 +28,8 @@ export function CourseSettingsPage() {
 
   const save = async (course: CourseConfig) => {
     if (!token) return;
-    if (!course.name.trim() || !course.duration.trim() || course.capacity <= 0 || course.price < 0) {
-      toast.error("강좌명, 기간, 정원, 금액을 확인해주세요");
+    if (!course.name.trim() || course.capacity <= 0 || course.price < 0) {
+      toast.error("강좌명, 정원, 금액을 확인해주세요");
       return;
     }
     setSavingId(course.id);
@@ -37,7 +37,8 @@ export function CourseSettingsPage() {
       const response = await updateAdminCourse(token, {
         id: course.id,
         name: course.name.trim(),
-        duration: course.duration.trim(),
+        training_start: course.training_start ?? undefined,
+        training_end: course.training_end ?? undefined,
         capacity: course.capacity,
         price: course.price,
       });
@@ -86,7 +87,8 @@ export function CourseSettingsPage() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-4 py-3 text-left">강좌</th>
-                    <th className="px-4 py-3 text-left">기간</th>
+                    <th className="px-4 py-3 text-left">교육 시작</th>
+                    <th className="px-4 py-3 text-left">교육 종료</th>
                     <th className="px-4 py-3 text-left">정원</th>
                     <th className="px-4 py-3 text-left">금액(원)</th>
                     <th className="px-4 py-3 text-right">저장</th>
@@ -104,9 +106,18 @@ export function CourseSettingsPage() {
                       </td>
                       <td className="px-4 py-3 min-w-36">
                         <Input
-                          aria-label={`${course.name} 기간`}
-                          value={course.duration}
-                          onChange={(event) => updateDraft(course.id, "duration", event.target.value)}
+                          aria-label={`${course.name} 교육 시작일`}
+                          type="date"
+                          value={course.training_start ?? ""}
+                          onChange={(event) => updateDraft(course.id, "training_start", event.target.value)}
+                        />
+                      </td>
+                      <td className="px-4 py-3 min-w-36">
+                        <Input
+                          aria-label={`${course.name} 교육 종료일`}
+                          type="date"
+                          value={course.training_end ?? ""}
+                          onChange={(event) => updateDraft(course.id, "training_end", event.target.value)}
                         />
                       </td>
                       <td className="px-4 py-3 w-32">

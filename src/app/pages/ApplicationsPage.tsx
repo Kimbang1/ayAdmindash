@@ -162,7 +162,7 @@ export function ApplicationsPage() {
                 <div className="flex items-center justify-between text-sm">
                   <div className="flex items-center gap-1 text-gray-500">
                     <Clock className="h-3.5 w-3.5" />
-                    <span className="text-xs">{course.duration}</span>
+                    <span className="text-xs">{course.trainingPeriod}</span>
                   </div>
                   <div className="flex items-center gap-1 text-blue-600 text-xs font-medium">
                     상세 보기 <ArrowRight className="h-3 w-3" />
