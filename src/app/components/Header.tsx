@@ -30,7 +30,7 @@ export function Header({ newApplications, markAllSeen }: HeaderProps) {
 
         <div className="flex-1" />
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <NotificationPanel newApplications={newApplications} markAllSeen={markAllSeen} />
           <Button
             variant="ghost"
@@ -41,7 +41,7 @@ export function Header({ newApplications, markAllSeen }: HeaderProps) {
           >
             <Settings className="h-5 w-5" />
           </Button>
-          <div className="flex items-center gap-2 pl-3 border-l">
+          <div className="flex items-center gap-2 pl-2 border-l">
             <Avatar className="h-8 w-8">
               <AvatarImage src="" />
               <AvatarFallback className="bg-blue-100 text-blue-600">
