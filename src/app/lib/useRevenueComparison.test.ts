@@ -1,17 +1,32 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
-import { useRevenueComparison } from './useRevenueComparison'
 
-// auth mock
-vi.mock('./auth', () => ({
-  useAuth: () => ({ token: 'test-token', logout: vi.fn() }),
-}))
+// Hoisted mocks that can be modified during tests
+const { mockLogout, getAuthState, setAuthToken } = vi.hoisted(() => {
+  const mockLogout = vi.fn()
+  let authToken: string | null = 'test-token'
+  return {
+    mockLogout,
+    getAuthState: () => ({ token: authToken, logout: mockLogout }),
+    setAuthToken: (token: string | null) => {
+      authToken = token
+    },
+  }
+})
 
 // api mock
 const mockGetRevenueComparison = vi.fn()
 vi.mock('./api', () => ({
   getRevenueComparison: (...args: unknown[]) => mockGetRevenueComparison(...args),
 }))
+
+// auth mock with logout spy
+vi.mock('./auth', () => ({
+  useAuth: () => getAuthState(),
+}))
+
+// Import after mocks are set up
+const { useRevenueComparison } = await import('./useRevenueComparison')
 
 const mockResponse = {
   periods: [{ period_key: '2026-01', period_label: '2026년 1월', applications: 5, registrations: 3, revenue: 300000 }],
@@ -23,6 +38,7 @@ const mockResponse = {
 describe('useRevenueComparison', () => {
   beforeEach(() => {
     mockGetRevenueComparison.mockReset()
+    mockLogout.mockReset()
   })
 
   it('초기 상태: data null, loading false, error null', () => {
@@ -63,8 +79,6 @@ describe('useRevenueComparison', () => {
   })
 
   it('401 오류 시 logout 호출', async () => {
-    const logout = vi.fn()
-    vi.mocked(await import('./auth')).useAuth = () => ({ token: 'test-token', logout })
     mockGetRevenueComparison.mockRejectedValueOnce({ message: '인증 오류', status: 401 })
     const { result } = renderHook(() => useRevenueComparison())
 
@@ -72,7 +86,29 @@ describe('useRevenueComparison', () => {
       await result.current.fetch({ granularity: 'month', start: '2026-01', end: '2026-06' })
     })
 
-    // logout이 ref를 통해 호출됨 — error는 설정되지 않아야 함
+    // logout이 실제로 호출됨
+    expect(mockLogout).toHaveBeenCalled()
+    // 401 오류는 error로 설정되지 않아야 함
     expect(result.current.error).toBeNull()
+  })
+
+  it('token이 없으면 fetch 호출 시 API 호출 없음', async () => {
+    // token을 null로 설정
+    setAuthToken(null)
+    const { result } = renderHook(() => useRevenueComparison())
+
+    mockGetRevenueComparison.mockClear()
+
+    await act(async () => {
+      await result.current.fetch({ granularity: 'month', start: '2026-01', end: '2026-06' })
+    })
+
+    // API가 호출되지 않아야 함
+    expect(mockGetRevenueComparison).not.toHaveBeenCalled()
+    expect(result.current.data).toBeNull()
+    expect(result.current.error).toBeNull()
+
+    // 다음 테스트를 위해 token 복구
+    setAuthToken('test-token')
   })
 })
