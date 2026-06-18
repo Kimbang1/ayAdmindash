@@ -20,7 +20,7 @@ import { applyCurrentCourseRevenue, buildCourseMetricBreakdown, toCourses } from
 import { LoadError } from "../components/LoadError";
 import { useNotificationsContext } from "../lib/NotificationsContext";
 import { CourseMetricTooltip } from "../components/CourseMetricTooltip";
-import { KPI_CARD_STYLES } from "../lib/design";
+import { KPI_CARD_STYLES, PAGE_HEADERS } from "../lib/design";
 import type { Application } from "../lib/types";
 
 const statusConfig = {
@@ -136,7 +136,7 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-2xl p-6 text-white">
+      <div className={`bg-gradient-to-r ${PAGE_HEADERS.dashboard} rounded-2xl p-6 text-white`}>
         <div className="flex items-center justify-between">
           <div>
             <p className="text-slate-400 text-sm mb-1">EduAdmin 관리자 시스템</p>
