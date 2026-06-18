@@ -9,24 +9,12 @@ import { useCourses } from "../lib/useCourses";
 import { toCourses } from "../lib/transform";
 import { LoadError } from "../components/LoadError";
 import { useNotificationsContext } from "../lib/NotificationsContext";
+import { PAGE_HEADERS, CATEGORY_COLORS, CATEGORY_COLOR_DEFAULT } from "../lib/design";
 
 const statusColors = {
   "모집중": "bg-emerald-100 text-emerald-700 border-emerald-200",
   "마감임박": "bg-amber-100 text-amber-700 border-amber-200",
   "마감": "bg-gray-100 text-gray-500 border-gray-200",
-};
-
-const categoryColors: Record<string, string> = {
-  "웹 개발": "bg-blue-600",
-  "데이터": "bg-purple-600",
-  "디자인": "bg-pink-500",
-  "컴퓨터": "bg-blue-500",
-  "세무": "bg-emerald-600",
-  "영상": "bg-red-500",
-  "프로그래밍": "bg-orange-500",
-  "모바일": "bg-cyan-500",
-  "AI/ML": "bg-violet-600",
-  "인프라": "bg-slate-600",
 };
 
 export function ApplicationsPage() {
@@ -63,26 +51,26 @@ export function ApplicationsPage() {
         <LoadError message={coursesQuery.error} onRetry={coursesQuery.refresh} stale={coursesQuery.courses.length > 0} />
       )}
       {/* 페이지 헤더 */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-500 rounded-2xl p-6 text-white">
+      <div className={`bg-gradient-to-r ${PAGE_HEADERS.applications} rounded-2xl p-6 text-white`}>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <p className="text-blue-200 text-sm mb-1">강좌 관리</p>
+            <p className="text-slate-300 text-sm mb-1">강좌 관리</p>
             <h1 className="text-white text-2xl mb-1">신청 현황</h1>
-            <p className="text-blue-100 text-sm">강좌별 신청 인원 및 상태를 관리합니다</p>
+            <p className="text-slate-200 text-sm">강좌별 신청 인원 및 상태를 관리합니다</p>
           </div>
         </div>
         <div className="grid grid-cols-3 gap-4 mt-4">
           <div className="bg-white/15 rounded-xl p-3 text-center">
             <div className="text-2xl font-bold text-white">{totalApplicants.toLocaleString()}</div>
-            <div className="text-xs text-blue-200 mt-0.5">전체 신청자</div>
+            <div className="text-xs text-slate-300 mt-0.5">전체 신청자</div>
           </div>
           <div className="bg-white/15 rounded-xl p-3 text-center">
             <div className="text-2xl font-bold text-white">{activeCount}</div>
-            <div className="text-xs text-blue-200 mt-0.5">모집 중 강좌</div>
+            <div className="text-xs text-slate-300 mt-0.5">모집 중 강좌</div>
           </div>
           <div className="bg-white/15 rounded-xl p-3 text-center">
             <div className="text-2xl font-bold text-white">+{unseenNewCount}</div>
-            <div className="text-xs text-blue-200 mt-0.5">확인 안 한 신규 신청</div>
+            <div className="text-xs text-slate-300 mt-0.5">확인 안 한 신규 신청</div>
           </div>
         </div>
       </div>
@@ -104,7 +92,7 @@ export function ApplicationsPage() {
           const fillRate = Math.round((course.applicants / course.maxCapacity) * 100);
           const barColor =
             fillRate >= 90 ? "bg-red-500" : fillRate >= 70 ? "bg-amber-500" : "bg-emerald-500";
-          const accentColor = categoryColors[course.category] ?? "bg-gray-500";
+          const accentColor = CATEGORY_COLORS[course.category] ?? CATEGORY_COLOR_DEFAULT;
 
           return (
             <Card
