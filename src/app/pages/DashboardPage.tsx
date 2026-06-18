@@ -20,6 +20,7 @@ import { applyCurrentCourseRevenue, buildCourseMetricBreakdown, toCourses } from
 import { LoadError } from "../components/LoadError";
 import { useNotificationsContext } from "../lib/NotificationsContext";
 import { CourseMetricTooltip } from "../components/CourseMetricTooltip";
+import { KPI_CARD_STYLES } from "../lib/design";
 import type { Application } from "../lib/types";
 
 const statusConfig = {
@@ -97,18 +98,14 @@ export function DashboardPage() {
       value: summary?.applications ?? 0,
       metric: "applications",
       icon: ClipboardList,
-      color: "text-blue-600",
-      bgColor: "bg-blue-100",
-      border: "border-blue-200",
+      tone: "blue",
     },
     {
       title: "이번 달 등록",
       value: summary?.registrations ?? 0,
       metric: "registrations",
       icon: Users,
-      color: "text-emerald-600",
-      bgColor: "bg-emerald-100",
-      border: "border-emerald-200",
+      tone: "emerald",
     },
     {
       title: "미처리 상담",
@@ -116,9 +113,7 @@ export function DashboardPage() {
       metric: "pending",
       note: "현재 접수 상태인 신청자 기준입니다.",
       icon: MessageSquare,
-      color: "text-amber-600",
-      bgColor: "bg-amber-100",
-      border: "border-amber-200",
+      tone: "amber",
     },
     {
       title: "이번 달 매출",
@@ -126,9 +121,7 @@ export function DashboardPage() {
       metric: "revenue",
       note: "매출은 현재 강좌 가격 기준으로 계산됩니다.",
       icon: WalletCards,
-      color: "text-violet-600",
-      bgColor: "bg-violet-100",
-      border: "border-violet-200",
+      tone: "violet",
     },
   ] as const;
 
@@ -168,25 +161,28 @@ export function DashboardPage() {
       )}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {cards.map((card) => (
-          <CourseMetricTooltip
-            key={card.title}
-            title={card.title}
-            metric={card.metric}
-            rows={courseBreakdown}
-            note={"note" in card ? card.note : undefined}
-          >
-            <Card className={`h-full border-2 ${card.border}`}>
-              <CardContent className="p-5">
-                <div className={`${card.bgColor} p-2.5 rounded-xl w-fit mb-4`}>
-                  <card.icon className={`h-5 w-5 ${card.color}`} />
-                </div>
-                <div className={`text-3xl font-bold ${card.color} mb-1`}>{card.value}</div>
-                <div className="text-sm text-gray-500">{card.title}</div>
-              </CardContent>
-            </Card>
-          </CourseMetricTooltip>
-        ))}
+        {cards.map((card) => {
+          const style = KPI_CARD_STYLES[card.tone];
+          return (
+            <CourseMetricTooltip
+              key={card.title}
+              title={card.title}
+              metric={card.metric}
+              rows={courseBreakdown}
+              note={"note" in card ? card.note : undefined}
+            >
+              <Card className={`h-full border ${style.border}`}>
+                <CardContent className="p-5">
+                  <div className={`${style.icon} p-2.5 rounded-xl w-fit mb-4`}>
+                    <card.icon className={`h-5 w-5 ${style.text}`} />
+                  </div>
+                  <div className={`text-3xl font-bold ${style.text} mb-1`}>{card.value}</div>
+                  <div className="text-sm text-gray-500">{card.title}</div>
+                </CardContent>
+              </Card>
+            </CourseMetricTooltip>
+          );
+        })}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-5">
