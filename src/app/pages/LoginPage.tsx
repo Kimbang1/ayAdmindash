@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { useAuth } from '../lib/auth'
+import { Lock } from 'lucide-react'
 
 export function LoginPage() {
   const { login } = useAuth()
@@ -26,44 +27,53 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-10 rounded-2xl shadow-md w-full max-w-sm">
-        <div className="bg-slate-800 rounded-xl p-4 mb-6 text-center">
-          <div className="flex items-center justify-center gap-2 mb-1">
-            <div className="h-7 w-7 rounded-lg bg-blue-500 flex items-center justify-center">
-              <span className="text-white text-sm font-bold">A</span>
-            </div>
-            <h1 className="text-white text-xl font-semibold">하이미디어 안양</h1>
+    <div className="min-h-screen flex">
+      {/* Left Panel */}
+      <div className="hidden md:flex w-[45%] bg-slate-800 flex-col justify-center items-center gap-6 p-12">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center">
+            <span className="text-white text-lg font-bold">A</span>
           </div>
-          <p className="text-slate-400 text-sm">관리자 시스템</p>
+          <span className="text-white text-2xl font-bold">하이미디어 안양</span>
         </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              비밀번호
-            </label>
-            <input
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              required
-              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="관리자 비밀번호 입력"
-            />
-          </div>
-          {error && (
-            <p className="text-red-500 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-              {error}
-            </p>
-          )}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
-          >
-            {loading ? '로그인 중...' : '로그인'}
-          </button>
-        </form>
+        <div className="border-t border-slate-600 w-16" />
+        <p className="text-slate-300 text-lg">관리자 DashBoard</p>
+        <p className="text-slate-400 text-sm text-center max-w-xs">
+          관리자 전용 접근 시스템입니다.
+        </p>
+      </div>
+
+      {/* Right Panel */}
+      <div className="flex-1 bg-white flex flex-col justify-center items-center p-8 md:p-16">
+        <div className="w-full max-w-sm">
+          <h1 className="text-2xl font-semibold text-slate-800 mb-8">관리자 로그인</h1>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block text-sm text-slate-500 mb-2">비밀번호</label>
+              <div className="flex items-center gap-2 border-b border-slate-300 focus-within:border-blue-500 pb-2 transition-colors">
+                <Lock className="w-4 h-4 text-slate-400 shrink-0" />
+                <input
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  className="flex-1 outline-none text-sm placeholder:text-slate-300"
+                  placeholder="비밀번호를 입력하세요"
+                />
+              </div>
+            </div>
+            {error && (
+              <p className="text-red-500 text-sm">{error}</p>
+            )}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            >
+              {loading ? '로그인 중...' : '로그인'}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   )
