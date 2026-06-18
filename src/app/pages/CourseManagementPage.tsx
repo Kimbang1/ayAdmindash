@@ -263,7 +263,7 @@ export function CourseManagementPage() {
                     id="price"
                     type="number"
                     min={0}
-                    step={1000}
+                    step={10}
                     value={form.price}
                     onChange={(e) => updateField("price", e.target.value)}
                     placeholder="500000"
