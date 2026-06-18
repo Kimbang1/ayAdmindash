@@ -38,9 +38,11 @@ export function LoginPage() {
           <div className="border-t border-slate-600 w-16" />
           <p className="text-slate-300 text-lg">관리자 DashBoard</p>
           <p className="text-slate-400 text-sm text-center max-w-xs">
-            관리자 전용 접근 시스템입니다.
+            관리자 전용 시스템입니다.
           </p>
         </div>
+
+       
 
         {/* Right Panel */}
         <div className="flex-1 bg-white flex flex-col justify-center items-center p-8 md:p-16">
