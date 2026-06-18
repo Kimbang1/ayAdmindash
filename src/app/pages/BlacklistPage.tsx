@@ -5,6 +5,7 @@ import { LoadError } from "../components/LoadError"
 import { useAuth } from "../lib/auth"
 import { getBlacklistedApplications } from "../lib/api"
 import { calcAge } from "../lib/transform"
+import { PAGE_HEADERS } from "../lib/design"
 import type { Application } from "../lib/types"
 
 const DETAIL_WINDOW_FEATURES = "width=560,height=900"
@@ -41,18 +42,18 @@ export function BlacklistPage() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-gradient-to-r from-red-700 to-red-600 rounded-2xl p-6 text-white">
+      <div className={`bg-gradient-to-r ${PAGE_HEADERS.blacklist} rounded-2xl p-6 text-white`}>
         <div className="flex items-center gap-3 mb-4">
           <ShieldX className="h-6 w-6" />
           <div>
-            <p className="text-red-200 text-sm mb-1">관리 메뉴</p>
+            <p className="text-slate-400 text-sm mb-1">관리 메뉴</p>
             <h1 className="text-white text-2xl">블랙리스트</h1>
-            <p className="text-red-200 text-sm">전 강좌 블랙리스트 등록 신청자 목록입니다.</p>
+            <p className="text-slate-300 text-sm">전 강좌 블랙리스트 등록 신청자 목록입니다.</p>
           </div>
         </div>
         <div className="bg-white/15 rounded-xl p-3 inline-block">
           <span className="text-2xl font-bold">{applications.length}</span>
-          <span className="text-red-200 text-sm ml-2">명 등록됨</span>
+          <span className="text-slate-300 text-sm ml-2">명 등록됨</span>
         </div>
       </div>
 
