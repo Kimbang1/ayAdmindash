@@ -223,3 +223,18 @@ export const getLogs = (
     headers: { Authorization: `Bearer ${token}` },
   })
 }
+
+export const getRevenueComparison = (
+  token: string,
+  params: import('./types').RevenueComparisonParams
+): Promise<import('./types').RevenueComparisonResponse> => {
+  const qs = new URLSearchParams({
+    granularity: params.granularity,
+    start: params.start,
+    end: params.end,
+  }).toString()
+  return callEdge<import('./types').RevenueComparisonResponse>(
+    `/admin-revenue-comparison?${qs}`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  )
+}

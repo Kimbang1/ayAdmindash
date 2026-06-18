@@ -115,3 +115,37 @@ export interface GetLogsResponse {
   limit: number
   offset: number
 }
+
+export type RevenueGranularity = 'month' | 'quarter' | 'year'
+
+export interface RevenueComparisonParams {
+  granularity: RevenueGranularity
+  start: string  // month: 'YYYY-MM', quarter: 'YYYY-Q1', year: 'YYYY'
+  end: string
+}
+
+export interface RevenueComparisonPeriod {
+  period_key: string
+  period_label: string
+  applications: number
+  registrations: number
+  revenue: number
+}
+
+export interface RevenueComparisonDetail {
+  period_key: string
+  period_label: string
+  course_id: number
+  course_name: string
+  age_band: string
+  applications: number
+  registrations: number
+  revenue: number
+}
+
+export interface RevenueComparisonResponse {
+  periods: RevenueComparisonPeriod[]
+  details: RevenueComparisonDetail[]
+  generated_at: string
+  timezone: 'Asia/Seoul'
+}
