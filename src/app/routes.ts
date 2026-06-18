@@ -6,7 +6,7 @@ import { ApplicationsPage } from "./pages/ApplicationsPage";
 import { StatsPage } from "./pages/StatsPage";
 import { CourseDetailPage } from "./pages/CourseDetailPage";
 import { ApplicantDetailPage } from "./pages/ApplicantDetailPage";
-import { CourseManagementPage } from "./pages/CourseManagementPage"
+import { CourseManagementPage } from "./pages/CourseManagementPage";
 import { BlacklistPage } from "./pages/BlacklistPage";
 import { RevenueComparisonPage } from "./pages/RevenueComparisonPage";
 
