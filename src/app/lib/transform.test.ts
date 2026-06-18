@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { toApplicants, toCourses } from "./transform";
+import {
+  buildCourseMetricBreakdown,
+  calculateCurrentCourseRevenue,
+  toApplicants,
+  toCourses,
+} from "./transform";
 import type { Application, CourseConfig } from "./types";
 
 const courses: CourseConfig[] = [
@@ -121,5 +126,70 @@ describe("toApplicants", () => {
     ];
 
     expect(toApplicants(all, all).every((item) => !item.isAdditionalCourse)).toBe(true);
+  });
+});
+
+describe("calculateCurrentCourseRevenue", () => {
+  it("등록 당시 금액이 아니라 최신 강좌 가격으로 등록 매출을 계산한다", () => {
+    const source = application("a1", 1, "010-0000-0001", "등록");
+    source.registered_at = "2026-06-15T09:00:00+09:00";
+    source.registered_price = 100000;
+    const changedCourses = courses.map((course) =>
+      course.id === 1 ? { ...course, price: 150000 } : course
+    );
+
+    expect(
+      calculateCurrentCourseRevenue([source], changedCourses, {
+        start: "2026-06-01",
+        end_exclusive: "2026-07-01",
+      })
+    ).toBe(150000);
+  });
+
+  it("선택된 기간 밖에 등록된 신청자는 매출 계산에서 제외한다", () => {
+    const source = application("a1", 1, "010-0000-0001", "등록");
+    source.registered_at = "2026-05-31T23:59:59+09:00";
+
+    expect(
+      calculateCurrentCourseRevenue([source], courses, {
+        start: "2026-06-01",
+        end_exclusive: "2026-07-01",
+      })
+    ).toBe(0);
+  });
+});
+
+describe("buildCourseMetricBreakdown", () => {
+  it("강좌별 이번 달 신청, 등록, 상담 상태, 현재 가격 기준 매출을 계산한다", () => {
+    const registered = application("a1", 1, "010-0000-0001", "등록");
+    registered.created_at = "2026-06-10T09:00:00+09:00";
+    registered.registered_at = "2026-06-15T09:00:00+09:00";
+    registered.registered_price = 100000;
+
+    const consulted = application("a2", 1, "010-0000-0002");
+    consulted.created_at = "2026-06-11T09:00:00+09:00";
+    consulted.status = "상담예정";
+    consulted.scheduled_date = "2026-06-20";
+
+    const oldApplication = application("a3", 1, "010-0000-0003");
+    oldApplication.created_at = "2026-05-30T09:00:00+09:00";
+
+    const changedCourses = courses.map((course) =>
+      course.id === 1 ? { ...course, price: 150000 } : course
+    );
+
+    expect(
+      buildCourseMetricBreakdown(
+        [registered, consulted, oldApplication],
+        changedCourses,
+        { start: "2026-06-01", end_exclusive: "2026-07-01" }
+      )[0]
+    ).toMatchObject({
+      applications: 2,
+      registrations: 1,
+      consultations: 1,
+      pending: 2,
+      revenue: 150000,
+    });
   });
 });

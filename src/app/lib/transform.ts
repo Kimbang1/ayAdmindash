@@ -1,4 +1,4 @@
-import type { Application, CourseConfig } from './types'
+import type { AdminStats, Application, CourseConfig } from './types'
 
 export interface Course {
   id: string
@@ -27,6 +27,16 @@ export interface Applicant {
   blacklistReason: string | null
 }
 
+export interface CourseMetricBreakdown {
+  courseId: number
+  name: string
+  applications: number
+  registrations: number
+  consultations: number
+  pending: number
+  revenue: number
+}
+
 function formatPeriod(start: string | null, end: string | null): string {
   if (!start && !end) return '기간 미정'
   const fmt = (d: string) => d.replace(/-/g, '.')
@@ -42,6 +52,8 @@ const CATEGORY_LABELS: Record<string, string> = {
   video: '영상',
 }
 
+type StatsPeriod = Pick<AdminStats['period'], 'start' | 'end_exclusive'>
+
 export function calcAge(birthDate: string): number {
   const today = new Date()
   const birth = new Date(birthDate)
@@ -56,6 +68,115 @@ function computeCourseStatus(count: number, capacity: number): Course['status'] 
   if (rate >= 1) return '마감'
   if (rate >= 0.9) return '마감임박'
   return '모집중'
+}
+
+function periodBoundaryTime(value: string): number {
+  const normalized = /^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T00:00:00+09:00` : value
+  return new Date(normalized).getTime()
+}
+
+function isRegisteredInPeriod(application: Application, period: StatsPeriod): boolean {
+  return isDateInPeriod(application.registered_at, period)
+}
+
+function isDateInPeriod(value: string | null, period: StatsPeriod): boolean {
+  if (!value) return false
+  const dateTime = new Date(value).getTime()
+  const start = periodBoundaryTime(period.start)
+  const end = periodBoundaryTime(period.end_exclusive)
+  if (!Number.isFinite(dateTime) || !Number.isFinite(start) || !Number.isFinite(end)) return false
+  return dateTime >= start && dateTime < end
+}
+
+export function calculateCurrentCourseRevenue(
+  applications: Application[],
+  configs: CourseConfig[],
+  period?: StatsPeriod
+): number {
+  const coursesById = new Map(configs.map((course) => [course.id, course]))
+
+  return applications.reduce((total, application) => {
+    if (application.enrollment_status !== '등록') return total
+    if (period && !isRegisteredInPeriod(application, period)) return total
+
+    const currentPrice =
+      coursesById.get(application.course_id)?.price ??
+      application.courses.price ??
+      application.registered_price ??
+      0
+
+    return total + currentPrice
+  }, 0)
+}
+
+export function applyCurrentCourseRevenue(
+  stats: AdminStats | null,
+  applications: Application[],
+  configs: CourseConfig[]
+): AdminStats | null {
+  if (!stats) return null
+
+  return {
+    ...stats,
+    summary: {
+      ...stats.summary,
+      revenue: calculateCurrentCourseRevenue(applications, configs, stats.period),
+    },
+  }
+}
+
+export function buildCourseMetricBreakdown(
+  applications: Application[],
+  configs: CourseConfig[],
+  period: StatsPeriod
+): CourseMetricBreakdown[] {
+  const coursesById = new Map(configs.map((course) => [course.id, course]))
+  const rowsById = new Map<number, CourseMetricBreakdown>()
+
+  const getRow = (application: Application): CourseMetricBreakdown => {
+    const course = coursesById.get(application.course_id)
+    const existing = rowsById.get(application.course_id)
+    if (existing) return existing
+
+    const row: CourseMetricBreakdown = {
+      courseId: application.course_id,
+      name: course?.name ?? application.courses.name,
+      applications: 0,
+      registrations: 0,
+      consultations: 0,
+      pending: 0,
+      revenue: 0,
+    }
+    rowsById.set(application.course_id, row)
+    return row
+  }
+
+  for (const application of applications) {
+    const row = getRow(application)
+
+    if (isDateInPeriod(application.created_at, period)) {
+      row.applications += 1
+    }
+
+    if (application.status === '접수') {
+      row.pending += 1
+    }
+
+    if (application.status !== '접수' && isDateInPeriod(application.scheduled_date ?? application.created_at, period)) {
+      row.consultations += 1
+    }
+
+    if (application.enrollment_status === '등록' && isRegisteredInPeriod(application, period)) {
+      row.registrations += 1
+      row.revenue +=
+        coursesById.get(application.course_id)?.price ??
+        application.courses.price ??
+        application.registered_price ??
+        0
+    }
+  }
+
+  return Array.from(rowsById.values()).sort((a, b) => a.name.localeCompare(b.name, 'ko'))
 }
 
 export function toCourses(

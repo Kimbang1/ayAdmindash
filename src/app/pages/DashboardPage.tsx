@@ -16,9 +16,10 @@ import { useNavigate } from "react-router";
 import { useApplications } from "../lib/useApplications";
 import { useCourses } from "../lib/useCourses";
 import { useAdminStats } from "../lib/useAdminStats";
-import { toCourses } from "../lib/transform";
+import { applyCurrentCourseRevenue, buildCourseMetricBreakdown, toCourses } from "../lib/transform";
 import { LoadError } from "../components/LoadError";
 import { useNotificationsContext } from "../lib/NotificationsContext";
+import { CourseMetricTooltip } from "../components/CourseMetricTooltip";
 import type { Application } from "../lib/types";
 
 const statusConfig = {
@@ -37,14 +38,18 @@ function formatRelativeTime(dateStr: string): string {
   return `${Math.floor(hours / 24)}일 전`;
 }
 
-function toConsultation(app: Application, additionalPhones: Set<string>) {
+function toConsultation(
+  app: Application,
+  additionalPhones: Set<string>,
+  courseNamesById: Map<number, string>
+) {
   const status =
     app.status === "상담완료" ? "완료" : app.status === "상담예정" ? "처리중" : "미처리";
   return {
     id: app.id,
     courseId: app.course_id,
     name: app.name,
-    course: app.courses.name,
+    course: courseNamesById.get(app.course_id) ?? app.courses.name,
     type: app.kakao_link ? "kakao" : "phone",
     content: app.memo ?? app.motivation ?? "신청 접수",
     time: formatRelativeTime(app.created_at),
@@ -62,6 +67,11 @@ export function DashboardPage() {
 
   const { applications, loading, error, lastUpdated, refresh } = applicationsQuery;
   const courses = toCourses(applications, coursesQuery.courses, newApplicationIds);
+  const stats = applyCurrentCourseRevenue(statsQuery.stats, applications, coursesQuery.courses);
+  const courseBreakdown = stats
+    ? buildCourseMetricBreakdown(applications, coursesQuery.courses, stats.period)
+    : [];
+  const courseNamesById = new Map(coursesQuery.courses.map((course) => [course.id, course.name]));
   const registeredCoursesByPhone = new Map<string, Set<number>>();
   for (const application of applications) {
     if (application.enrollment_status !== "등록") continue;
@@ -77,14 +87,15 @@ export function DashboardPage() {
   const recentConsultations = [...applications]
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 5)
-    .map((application) => toConsultation(application, additionalPhones));
+    .map((application) => toConsultation(application, additionalPhones, courseNamesById));
 
-  const summary = statsQuery.stats?.summary;
+  const summary = stats?.summary;
   const pendingCount = applications.filter((application) => application.status === "접수").length;
   const cards = [
     {
       title: "이번 달 신청",
       value: summary?.applications ?? 0,
+      metric: "applications",
       icon: ClipboardList,
       color: "text-blue-600",
       bgColor: "bg-blue-100",
@@ -93,6 +104,7 @@ export function DashboardPage() {
     {
       title: "이번 달 등록",
       value: summary?.registrations ?? 0,
+      metric: "registrations",
       icon: Users,
       color: "text-emerald-600",
       bgColor: "bg-emerald-100",
@@ -101,6 +113,8 @@ export function DashboardPage() {
     {
       title: "미처리 상담",
       value: pendingCount,
+      metric: "pending",
+      note: "현재 접수 상태인 신청자 기준입니다.",
       icon: MessageSquare,
       color: "text-amber-600",
       bgColor: "bg-amber-100",
@@ -109,12 +123,14 @@ export function DashboardPage() {
     {
       title: "이번 달 매출",
       value: `${(summary?.revenue ?? 0).toLocaleString()}원`,
+      metric: "revenue",
+      note: "매출은 현재 강좌 가격 기준으로 계산됩니다.",
       icon: WalletCards,
       color: "text-violet-600",
       bgColor: "bg-violet-100",
       border: "border-violet-200",
     },
-  ];
+  ] as const;
 
   const nowDate = new Date().toLocaleDateString("ko-KR", {
     year: "numeric",
@@ -153,15 +169,23 @@ export function DashboardPage() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {cards.map((card) => (
-          <Card key={card.title} className={`border-2 ${card.border}`}>
-            <CardContent className="p-5">
-              <div className={`${card.bgColor} p-2.5 rounded-xl w-fit mb-4`}>
-                <card.icon className={`h-5 w-5 ${card.color}`} />
-              </div>
-              <div className={`text-3xl font-bold ${card.color} mb-1`}>{card.value}</div>
-              <div className="text-sm text-gray-500">{card.title}</div>
-            </CardContent>
-          </Card>
+          <CourseMetricTooltip
+            key={card.title}
+            title={card.title}
+            metric={card.metric}
+            rows={courseBreakdown}
+            note={"note" in card ? card.note : undefined}
+          >
+            <Card className={`h-full border-2 ${card.border}`}>
+              <CardContent className="p-5">
+                <div className={`${card.bgColor} p-2.5 rounded-xl w-fit mb-4`}>
+                  <card.icon className={`h-5 w-5 ${card.color}`} />
+                </div>
+                <div className={`text-3xl font-bold ${card.color} mb-1`}>{card.value}</div>
+                <div className="text-sm text-gray-500">{card.title}</div>
+              </CardContent>
+            </Card>
+          </CourseMetricTooltip>
         ))}
       </div>
 

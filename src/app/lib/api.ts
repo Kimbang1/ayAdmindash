@@ -112,8 +112,8 @@ export const createCourse = (
   token: string,
   body: {
     name: string
-    recruitment_start: string
-    recruitment_end: string
+    recruitment_start?: string
+    recruitment_end?: string
     training_start: string
     training_end: string
     capacity: number

@@ -14,7 +14,11 @@ import {
   Legend,
 } from "recharts";
 import { useAdminStats } from "../lib/useAdminStats";
+import { useApplications } from "../lib/useApplications";
+import { useCourses } from "../lib/useCourses";
+import { applyCurrentCourseRevenue, buildCourseMetricBreakdown } from "../lib/transform";
 import { LoadError } from "../components/LoadError";
+import { CourseMetricTooltip } from "../components/CourseMetricTooltip";
 
 const PIE_COLORS = ["#6366f1", "#3b82f6", "#06b6d4", "#10b981", "#f59e0b", "#ef4444"];
 const SUMMARY_STYLES = {
@@ -25,7 +29,18 @@ const SUMMARY_STYLES = {
 } as const;
 
 export function StatsPage() {
-  const { stats, loading, error, refresh } = useAdminStats();
+  const statsQuery = useAdminStats();
+  const applicationsQuery = useApplications();
+  const coursesQuery = useCourses();
+  const { loading, error, refresh } = statsQuery;
+  const stats = applyCurrentCourseRevenue(
+    statsQuery.stats,
+    applicationsQuery.applications,
+    coursesQuery.courses
+  );
+  const courseBreakdown = stats
+    ? buildCourseMetricBreakdown(applicationsQuery.applications, coursesQuery.courses, stats.period)
+    : [];
 
   if (loading && !stats) {
     return <div className="flex items-center justify-center h-64 text-gray-400">통계를 불러오는 중...</div>;
@@ -42,29 +57,65 @@ export function StatsPage() {
       </div>
 
       {error && <LoadError message={error} onRetry={refresh} stale={Boolean(stats)} />}
+      {applicationsQuery.error && (
+        <LoadError
+          message={applicationsQuery.error}
+          onRetry={applicationsQuery.refresh}
+          stale={applicationsQuery.applications.length > 0}
+        />
+      )}
+      {coursesQuery.error && (
+        <LoadError
+          message={coursesQuery.error}
+          onRetry={coursesQuery.refresh}
+          stale={coursesQuery.courses.length > 0}
+        />
+      )}
 
       {stats && (
         <>
           <div className="grid gap-4 md:grid-cols-4">
-            {[
-              { label: "이번 달 신청", value: `${stats.summary.applications}명`, icon: Users, tone: "blue" },
-              { label: "이번 달 등록", value: `${stats.summary.registrations}명`, icon: BarChart2, tone: "emerald" },
-              { label: "상담 기록", value: `${stats.summary.consultations}건`, icon: MessageCircle, tone: "amber" },
-              { label: "등록 매출", value: `${stats.summary.revenue.toLocaleString()}원`, icon: WalletCards, tone: "violet" },
-            ].map((item) => {
+            {([
+              { label: "이번 달 신청", value: `${stats.summary.applications}명`, icon: Users, tone: "blue", metric: "applications" },
+              { label: "이번 달 등록", value: `${stats.summary.registrations}명`, icon: BarChart2, tone: "emerald", metric: "registrations" },
+              {
+                label: "상담 기록",
+                value: `${stats.summary.consultations}건`,
+                icon: MessageCircle,
+                tone: "amber",
+                metric: "consultations",
+                note: "강좌별 수치는 상담예정/상담완료 상태의 신청자 기준입니다.",
+              },
+              {
+                label: "등록 매출",
+                value: `${stats.summary.revenue.toLocaleString()}원`,
+                icon: WalletCards,
+                tone: "violet",
+                metric: "revenue",
+                note: "매출은 현재 강좌 가격 기준으로 계산됩니다.",
+              },
+            ] as const).map((item) => {
               const style = SUMMARY_STYLES[item.tone as keyof typeof SUMMARY_STYLES];
               return (
-              <Card key={item.label} className="border border-gray-200">
-                <CardContent className="p-5 flex items-center gap-4">
-                  <div className={`${style.background} p-3 rounded-xl`}>
-                    <item.icon className={`h-6 w-6 ${style.icon}`} />
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold text-gray-900">{item.value}</div>
-                    <div className="text-sm text-gray-500">{item.label}</div>
-                  </div>
-                </CardContent>
-              </Card>
+                <CourseMetricTooltip
+                  key={item.label}
+                  title={item.label}
+                  metric={item.metric}
+                  rows={courseBreakdown}
+                  note={"note" in item ? item.note : undefined}
+                >
+                  <Card className="h-full border border-gray-200">
+                    <CardContent className="p-5 flex items-center gap-4">
+                      <div className={`${style.background} p-3 rounded-xl`}>
+                        <item.icon className={`h-6 w-6 ${style.icon}`} />
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold text-gray-900">{item.value}</div>
+                        <div className="text-sm text-gray-500">{item.label}</div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </CourseMetricTooltip>
             )})}
           </div>
 
