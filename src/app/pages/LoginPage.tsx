@@ -49,10 +49,11 @@ export function LoginPage() {
           <h1 className="text-2xl font-semibold text-slate-800 mb-8">관리자 로그인</h1>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm text-slate-500 mb-2">비밀번호</label>
+              <label htmlFor="password" className="block text-sm text-slate-500 mb-2">비밀번호</label>
               <div className="flex items-center gap-2 border-b border-slate-300 focus-within:border-blue-500 pb-2 transition-colors">
                 <Lock className="w-4 h-4 text-slate-400 shrink-0" />
                 <input
+                  id="password"
                   name="password"
                   type="password"
                   autoComplete="current-password"
