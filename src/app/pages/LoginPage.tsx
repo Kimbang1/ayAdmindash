@@ -27,24 +27,25 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left Panel */}
-      <div className="hidden md:flex w-[45%] bg-slate-800 flex-col justify-center items-center gap-6 p-12">
-        <div className="flex items-center gap-3">
-          <img src="/logo.jpg" alt="하이미디어 안양 로고" className="w-10 h-10 rounded-xl object-cover" />
-          <span className="text-white text-2xl font-bold">하이미디어 안양</span>
+    <div className="min-h-screen bg-slate-100 flex items-center justify-center p-6">
+      <div className="flex w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden min-h-[520px]">
+        {/* Left Panel */}
+        <div className="hidden md:flex w-[45%] bg-slate-800 flex-col justify-center items-center gap-6 p-12">
+          <div className="flex items-center gap-3">
+            <img src="/logo.jpg" alt="하이미디어 안양 로고" className="w-10 h-10 rounded-xl object-cover" />
+            <span className="text-white text-2xl font-bold">하이미디어 안양</span>
+          </div>
+          <div className="border-t border-slate-600 w-16" />
+          <p className="text-slate-300 text-lg">관리자 DashBoard</p>
+          <p className="text-slate-400 text-sm text-center max-w-xs">
+            관리자 전용 접근 시스템입니다.
+          </p>
         </div>
-        <div className="border-t border-slate-600 w-16" />
-        <p className="text-slate-300 text-lg">관리자 DashBoard</p>
-        <p className="text-slate-400 text-sm text-center max-w-xs">
-          관리자 전용 시스템입니다.
-        </p>
-      </div>
 
-      {/* Right Panel */}
-      <div className="flex-1 bg-white flex flex-col justify-center items-center p-8 md:p-16">
-        <div className="w-full max-w-sm">
-          <h1 className="text-2xl font-semibold text-slate-800 mb-8">관리자 로그인</h1>
+        {/* Right Panel */}
+        <div className="flex-1 bg-white flex flex-col justify-center items-center p-8 md:p-16">
+          <div className="w-full max-w-sm">
+            <h1 className="text-2xl font-semibold text-slate-800 mb-8">관리자 로그인</h1>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="password" className="block text-sm text-slate-500 mb-2">비밀번호</label>
@@ -72,6 +73,7 @@ export function LoginPage() {
               {loading ? '로그인 중...' : '로그인'}
             </button>
           </form>
+          </div>
         </div>
       </div>
     </div>
