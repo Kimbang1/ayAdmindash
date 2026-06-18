@@ -19,14 +19,7 @@ import { useCourses } from "../lib/useCourses";
 import { applyCurrentCourseRevenue, buildCourseMetricBreakdown } from "../lib/transform";
 import { LoadError } from "../components/LoadError";
 import { CourseMetricTooltip } from "../components/CourseMetricTooltip";
-
-const PIE_COLORS = ["#6366f1", "#3b82f6", "#06b6d4", "#10b981", "#f59e0b", "#ef4444"];
-const SUMMARY_STYLES = {
-  blue: { background: "bg-blue-100", icon: "text-blue-600" },
-  emerald: { background: "bg-emerald-100", icon: "text-emerald-600" },
-  amber: { background: "bg-amber-100", icon: "text-amber-600" },
-  violet: { background: "bg-violet-100", icon: "text-violet-600" },
-} as const;
+import { PAGE_HEADERS, CHART_COLORS, KPI_CARD_STYLES } from "../lib/design";
 
 export function StatsPage() {
   const statsQuery = useAdminStats();
@@ -48,10 +41,10 @@ export function StatsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-gradient-to-r from-violet-700 to-purple-600 rounded-2xl p-6 text-white">
-        <p className="text-violet-300 text-sm mb-1">통계 분석</p>
+      <div className={`bg-gradient-to-r ${PAGE_HEADERS.stats} rounded-2xl p-6 text-white`}>
+        <p className="text-slate-400 text-sm mb-1">통계 분석</p>
         <h1 className="text-white text-2xl mb-1">이번 달 운영 통계</h1>
-        <p className="text-violet-200 text-sm">
+        <p className="text-slate-300 text-sm">
           {stats ? `${stats.period.start} ~ ${stats.period.end_exclusive} 미만 · ${stats.timezone}` : "월간 집계"}
         </p>
       </div>
@@ -95,7 +88,7 @@ export function StatsPage() {
                 note: "매출은 현재 강좌 가격 기준으로 계산됩니다.",
               },
             ] as const).map((item) => {
-              const style = SUMMARY_STYLES[item.tone as keyof typeof SUMMARY_STYLES];
+              const style = KPI_CARD_STYLES[item.tone as keyof typeof KPI_CARD_STYLES];
               return (
                 <CourseMetricTooltip
                   key={item.label}
@@ -106,8 +99,8 @@ export function StatsPage() {
                 >
                   <Card className="h-full border border-gray-200">
                     <CardContent className="p-5 flex items-center gap-4">
-                      <div className={`${style.background} p-3 rounded-xl`}>
-                        <item.icon className={`h-6 w-6 ${style.icon}`} />
+                      <div className={`${style.icon} p-3 rounded-xl`}>
+                        <item.icon className={`h-6 w-6 ${style.text}`} />
                       </div>
                       <div>
                         <div className="text-2xl font-bold text-gray-900">{item.value}</div>
@@ -164,7 +157,7 @@ export function StatsPage() {
                       paddingAngle={3}
                     >
                       {stats.age_distribution.map((entry, index) => (
-                        <Cell key={entry.label} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                        <Cell key={entry.label} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                       ))}
                     </Pie>
                     <Tooltip formatter={(value: number) => [`${value}명`, ""]} />
