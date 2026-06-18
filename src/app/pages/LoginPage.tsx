@@ -31,15 +31,13 @@ export function LoginPage() {
       {/* Left Panel */}
       <div className="hidden md:flex w-[45%] bg-slate-800 flex-col justify-center items-center gap-6 p-12">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center">
-            <span className="text-white text-lg font-bold">A</span>
-          </div>
+          <img src="/logo.jpg" alt="하이미디어 안양 로고" className="w-10 h-10 rounded-xl object-cover" />
           <span className="text-white text-2xl font-bold">하이미디어 안양</span>
         </div>
         <div className="border-t border-slate-600 w-16" />
         <p className="text-slate-300 text-lg">관리자 DashBoard</p>
         <p className="text-slate-400 text-sm text-center max-w-xs">
-          관리자 전용 접근 시스템입니다.
+          관리자 전용 시스템입니다.
         </p>
       </div>
 
