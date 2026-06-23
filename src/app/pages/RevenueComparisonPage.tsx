@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { Download, Search, TrendingUp, Users, ClipboardList, WalletCards } from 'lucide-react'
 import {
   ComposedChart,
@@ -98,6 +98,8 @@ export function RevenueComparisonPage() {
   const [startInput, setStartInput] = useState(DEFAULT_INPUTS.month.start)
   const [endInput, setEndInput] = useState(DEFAULT_INPUTS.month.end)
   const [validationError, setValidationError] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState<10 | 20 | 30>(10)
   const { data, loading, error, fetch } = useRevenueComparison()
 
   const handleGranularityChange = useCallback((next: RevenueGranularity) => {
@@ -122,6 +124,10 @@ export function RevenueComparisonPage() {
     exportRevenueComparisonCsv(data.details, params)
   }, [data, granularity, startInput, endInput])
 
+  useEffect(() => {
+    setPage(1)
+  }, [data])
+
   const summary = data
     ? {
         revenue: data.periods.reduce((s, p) => s + p.revenue, 0),
@@ -129,6 +135,11 @@ export function RevenueComparisonPage() {
         applications: data.periods.reduce((s, p) => s + p.applications, 0),
       }
     : null
+
+  const totalPages = data ? Math.ceil(data.details.length / pageSize) : 0
+  const pagedDetails = data
+    ? data.details.slice((page - 1) * pageSize, page * pageSize)
+    : []
 
   return (
     <div className="space-y-6">
@@ -292,9 +303,29 @@ export function RevenueComparisonPage() {
       {/* 상세 테이블 */}
       {data && data.details.length > 0 && (
         <Card className="border border-gray-200">
-          <CardHeader className="border-b bg-gray-50 rounded-t-xl">
-            <CardTitle className="text-base text-gray-700">상세 내역</CardTitle>
-          </CardHeader>
+          <div className="border-b bg-gray-50 rounded-t-xl px-4 py-3 flex items-center justify-between">
+            <p className="text-sm font-semibold text-gray-700">
+              상세 내역{' '}
+              <span className="text-xs text-gray-400 font-normal">총 {data.details.length}건</span>
+            </p>
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-gray-500 mr-1">표시:</span>
+              {([10, 20, 30] as const).map((size) => (
+                <button
+                  key={size}
+                  type="button"
+                  onClick={() => { setPageSize(size); setPage(1); }}
+                  className={`text-xs px-2.5 py-1 rounded transition-colors ${
+                    pageSize === size
+                      ? 'bg-indigo-600 text-white font-medium'
+                      : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
+          </div>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -309,7 +340,7 @@ export function RevenueComparisonPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {data.details.map((row, i) => (
+                  {pagedDetails.map((row, i) => (
                     <tr key={i} className="border-b hover:bg-gray-50">
                       <td className="px-4 py-3 text-gray-700">{row.period_label}</td>
                       <td className="px-4 py-3 text-gray-700">{row.course_name}</td>
@@ -322,6 +353,49 @@ export function RevenueComparisonPage() {
                 </tbody>
               </table>
             </div>
+            {totalPages > 1 && (
+              <div className="border-t bg-gray-50 px-4 py-3 flex items-center justify-between">
+                <p className="text-xs text-gray-500">
+                  {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, data.details.length)} / {data.details.length}건
+                </p>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="text-xs px-2 py-1 rounded border border-gray-200 text-gray-600 disabled:opacity-40 hover:bg-gray-50 disabled:cursor-not-allowed"
+                  >
+                    ‹
+                  </button>
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const start = Math.max(1, Math.min(page - 2, totalPages - 4))
+                    const pageNum = start + i
+                    return (
+                      <button
+                        key={pageNum}
+                        type="button"
+                        onClick={() => setPage(pageNum)}
+                        className={`text-xs px-2.5 py-1 rounded transition-colors ${
+                          page === pageNum
+                            ? 'bg-indigo-600 text-white font-medium'
+                            : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    )
+                  })}
+                  <button
+                    type="button"
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="text-xs px-2 py-1 rounded border border-gray-200 text-gray-600 disabled:opacity-40 hover:bg-gray-50 disabled:cursor-not-allowed"
+                  >
+                    ›
+                  </button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
