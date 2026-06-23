@@ -125,48 +125,50 @@ export function CallbackTab({ application }: CallbackTabProps) {
         <div className="flex-1 h-px bg-amber-200" />
       </div>
 
-      {/* 이력 목록 — 하단 */}
+      {/* 이력 목록 — 하단 고정 높이 */}
       {error && <p className="text-xs text-red-500">{error}</p>}
-      {loadingLogs ? (
-        <p className="text-sm text-amber-500">불러오는 중...</p>
-      ) : logs.length === 0 ? (
-        <p className="text-sm text-amber-500">재전화문의 이력이 없습니다.</p>
-      ) : (
-        <ul className="space-y-2">
-          {logs.map((log) => (
-            <li key={log.id} className="rounded-md border border-amber-100 bg-white p-3 text-sm">
-              <p className="whitespace-pre-wrap text-gray-900">{log.memo}</p>
-              <div className="mt-1 flex items-center gap-2">
-                <p className="text-xs text-gray-400">
-                  재전화일 {log.callback_date} · {new Date(log.created_at).toLocaleString("ko-KR")}
-                </p>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="icon" className="ml-auto size-8 text-gray-400 hover:text-red-600">
-                      <Trash2 className="size-4" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>재전화문의 이력을 삭제하시겠습니까?</AlertDialogTitle>
-                      <AlertDialogDescription>삭제한 이력은 복구할 수 없습니다.</AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>취소</AlertDialogCancel>
-                      <AlertDialogAction
-                        className={buttonVariants({ variant: "destructive" })}
-                        onClick={() => handleDeleteLog(log.id)}
-                      >
-                        삭제
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+      <div className="h-48 overflow-y-auto">
+        {loadingLogs ? (
+          <p className="text-sm text-amber-500">불러오는 중...</p>
+        ) : logs.length === 0 ? (
+          <p className="text-sm text-amber-500">재전화문의 이력이 없습니다.</p>
+        ) : (
+          <ul className="space-y-2">
+            {logs.map((log) => (
+              <li key={log.id} className="rounded-md border border-amber-100 bg-white p-3 text-sm">
+                <p className="whitespace-pre-wrap text-gray-900">{log.memo}</p>
+                <div className="mt-1 flex items-center gap-2">
+                  <p className="text-xs text-gray-400">
+                    재전화일 {log.callback_date} · {new Date(log.created_at).toLocaleString("ko-KR")}
+                  </p>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="ml-auto size-8 text-gray-400 hover:text-red-600">
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>재전화문의 이력을 삭제하시겠습니까?</AlertDialogTitle>
+                        <AlertDialogDescription>삭제한 이력은 복구할 수 없습니다.</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>취소</AlertDialogCancel>
+                        <AlertDialogAction
+                          className={buttonVariants({ variant: "destructive" })}
+                          onClick={() => handleDeleteLog(log.id)}
+                        >
+                          삭제
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }

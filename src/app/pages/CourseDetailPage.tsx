@@ -15,7 +15,7 @@ import { toApplicants } from "../lib/transform";
 import type { Applicant } from "../lib/transform";
 import { toast } from "sonner";
 
-const DETAIL_WINDOW_FEATURES = "width=1120,height=900";
+const DETAIL_WINDOW_FEATURES = "width=1120,height=600";
 
 function safeCsvFilename(value: string): string {
   return value.replace(/[\\/:*?"<>|\r\n]+/g, "_").trim().slice(0, 80) || "course";
@@ -108,13 +108,24 @@ export function CourseDetailPage() {
   };
 
   const filtered = useMemo(
-    () =>
-      applicants.filter(
-        (applicant) =>
-          applicant.name.includes(searchName) ||
-          applicant.consultationStatus.includes(searchName) ||
-          applicant.enrollmentStatus.includes(searchName)
-      ),
+    () => {
+      const q = searchName.trim().toLowerCase();
+      if (!q) return applicants;
+      return applicants.filter((applicant) =>
+        [
+          applicant.name,
+          applicant.phone,
+          applicant.appliedDate,
+          applicant.consultationStatus,
+          applicant.enrollmentStatus,
+          applicant.isBlacklisted ? "블랙리스트" : "",
+          applicant.blacklistReason ?? "",
+        ]
+          .join(" ")
+          .toLowerCase()
+          .includes(q)
+      );
+    },
     [applicants, searchName]
   );
 

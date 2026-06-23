@@ -140,14 +140,15 @@ export function ConsultationTab({ application, onSave, saving }: ConsultationTab
         <div className="flex-1 h-px bg-blue-200" />
       </div>
 
-      {/* 이력 목록 — 하단 */}
+      {/* 이력 목록 — 하단 고정 높이 */}
       {error && <p className="text-xs text-red-500">{error}</p>}
-      {loadingLogs ? (
-        <p className="text-sm text-blue-400">불러오는 중...</p>
-      ) : logs.length === 0 ? (
-        <p className="text-sm text-blue-400">상담 이력이 없습니다.</p>
-      ) : (
-        <ul className="space-y-2">
+      <div className="h-48 overflow-y-auto">
+        {loadingLogs ? (
+          <p className="text-sm text-blue-400">불러오는 중...</p>
+        ) : logs.length === 0 ? (
+          <p className="text-sm text-blue-400">상담 이력이 없습니다.</p>
+        ) : (
+          <ul className="space-y-2">
           {logs.map((log) => (
             <li key={log.id} className="rounded-md border border-blue-100 bg-white p-3 text-sm">
               <p className="whitespace-pre-wrap text-gray-900">{log.content}</p>
@@ -186,8 +187,9 @@ export function ConsultationTab({ application, onSave, saving }: ConsultationTab
               </div>
             </li>
           ))}
-        </ul>
-      )}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }
