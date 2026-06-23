@@ -87,48 +87,72 @@ export function ApplicantDetailPage() {
 
       <div className="flex flex-col p-6">
         <div className="space-y-4">
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-            <div>
-              <dt className="text-xs text-gray-400">이름</dt>
-              <dd className="text-gray-900">{current.name}</dd>
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <div className="flex-1 h-px bg-gray-200" />
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">기본 정보</span>
+              <div className="flex-1 h-px bg-gray-200" />
             </div>
-            <div>
-              <dt className="text-xs text-gray-400">나이</dt>
-              <dd className="text-gray-900">{calcAge(current.birth_date)}세</dd>
+            <dl className="grid grid-cols-2 gap-3 text-sm">
+              <div className="bg-gray-50 rounded-lg px-3 py-2">
+                <dt className="text-xs font-medium text-gray-500 mb-0.5">이름</dt>
+                <dd className="font-semibold text-gray-900">{current.name}</dd>
+              </div>
+              <div className="bg-gray-50 rounded-lg px-3 py-2">
+                <dt className="text-xs font-medium text-gray-500 mb-0.5">나이 / 성별</dt>
+                <dd className="font-semibold text-gray-900">{calcAge(current.birth_date)}세 · {current.gender}</dd>
+              </div>
+              <div className="col-span-2 bg-blue-50 rounded-lg px-3 py-2">
+                <dt className="text-xs font-medium text-blue-600 mb-0.5">연락처</dt>
+                <dd className="font-semibold text-gray-900 text-base">{current.phone}</dd>
+              </div>
+              <div className="col-span-2 bg-gray-50 rounded-lg px-3 py-2">
+                <dt className="text-xs font-medium text-gray-500 mb-0.5">주소</dt>
+                <dd className="text-gray-800">{current.address}</dd>
+              </div>
+            </dl>
+
+            <div className="flex items-center gap-2">
+              <div className="flex-1 h-px bg-gray-200" />
+              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">취업 관련</span>
+              <div className="flex-1 h-px bg-gray-200" />
             </div>
-            <div>
-              <dt className="text-xs text-gray-400">성별</dt>
-              <dd className="text-gray-900">{current.gender}</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-gray-400">연락처</dt>
-              <dd className="text-gray-900">{current.phone}</dd>
-            </div>
-            <div className="col-span-2">
-              <dt className="text-xs text-gray-400">주소</dt>
-              <dd className="text-gray-900">{current.address}</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-gray-400">병역</dt>
-              <dd className="text-gray-900">{current.military ?? "-"}</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-gray-400">내일배움카드</dt>
-              <dd className="text-gray-900">{current.has_training_card ? "보유" : "미보유"}</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-gray-400">국민취업지원제도</dt>
-              <dd className="text-gray-900">{current.national_employment ? "예" : "아니오"}</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-gray-400">희망 근무시간</dt>
-              <dd className="text-gray-900">{current.employment_hours}</dd>
-            </div>
-            <div className="col-span-2">
-              <dt className="text-xs text-gray-400">지원 동기</dt>
-              <dd className="whitespace-pre-wrap text-gray-900">{current.motivation ?? "-"}</dd>
-            </div>
-          </dl>
+            <dl className="grid grid-cols-2 gap-3 text-sm">
+              <div className="bg-gray-50 rounded-lg px-3 py-2">
+                <dt className="text-xs font-medium text-gray-500 mb-0.5">병역</dt>
+                <dd className="font-semibold text-gray-900">{current.military ?? "-"}</dd>
+              </div>
+              <div className={cn(
+                "rounded-lg px-3 py-2",
+                current.has_training_card ? "bg-emerald-50" : "bg-gray-50"
+              )}>
+                <dt className={cn(
+                  "text-xs font-medium mb-0.5",
+                  current.has_training_card ? "text-emerald-600" : "text-gray-500"
+                )}>
+                  내일배움카드
+                </dt>
+                <dd className={cn(
+                  "font-semibold",
+                  current.has_training_card ? "text-emerald-700" : "text-gray-900"
+                )}>
+                  {current.has_training_card ? "보유 ✓" : "미보유"}
+                </dd>
+              </div>
+              <div className="bg-gray-50 rounded-lg px-3 py-2">
+                <dt className="text-xs font-medium text-gray-500 mb-0.5">국민취업지원</dt>
+                <dd className="font-semibold text-gray-900">{current.national_employment ? "해당" : "해당 없음"}</dd>
+              </div>
+              <div className="bg-gray-50 rounded-lg px-3 py-2">
+                <dt className="text-xs font-medium text-gray-500 mb-0.5">희망 근무시간</dt>
+                <dd className="font-semibold text-gray-900">{current.employment_hours}</dd>
+              </div>
+              <div className="col-span-2 bg-gray-50 rounded-lg px-3 py-2">
+                <dt className="text-xs font-medium text-gray-500 mb-1">지원 동기</dt>
+                <dd className="whitespace-pre-wrap text-gray-700 text-xs leading-relaxed">{current.motivation ?? "-"}</dd>
+              </div>
+            </dl>
+          </div>
 
           <div className="grid grid-cols-2 gap-3 rounded-xl border border-gray-200 bg-gray-50 p-3">
             <label className="space-y-1">
