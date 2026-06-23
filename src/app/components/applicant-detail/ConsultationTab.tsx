@@ -103,70 +103,17 @@ export function ConsultationTab({ application, onSave, saving }: ConsultationTab
 
   return (
     <div className="space-y-4 rounded-xl border border-blue-200 bg-blue-50 p-4">
-      <div>
-        <h3 className="mb-2 text-sm font-semibold text-blue-900">상담 예정일</h3>
-        <div className="rounded-md border border-blue-100 bg-white p-2">
+      {/* 입력 폼 — 상단 */}
+      <div className="rounded-xl border-2 border-blue-300 bg-white p-3 shadow-sm">
+        <h3 className="mb-2 flex items-center gap-1 text-xs font-bold text-blue-700">
+          ✏️ 새 상담 이력 등록
+        </h3>
+        <div className="space-y-2">
           <DateFieldPopover
-            value={application.scheduled_date}
-            onChange={(date) => onSave({ scheduled_date: date })}
-            placeholder="상담 예정일을 선택하세요"
-            disabled={saving}
+            value={consultationDate}
+            onChange={(date) => setConsultationDate(date ?? today())}
+            allowClear={false}
           />
-        </div>
-      </div>
-
-      <div>
-        <h3 className="mb-2 text-sm font-semibold text-blue-900">상담 이력</h3>
-        {error && <p className="mb-2 text-xs text-red-500">{error}</p>}
-        {loadingLogs ? (
-          <p className="text-sm text-blue-400">불러오는 중...</p>
-        ) : logs.length === 0 ? (
-          <p className="text-sm text-blue-400">상담 이력이 없습니다.</p>
-        ) : (
-          <ul className="mb-3 space-y-2">
-            {logs.map((log) => (
-              <li key={log.id} className="rounded-md border border-blue-100 bg-white p-3 text-sm">
-                <p className="whitespace-pre-wrap text-gray-900">{log.content}</p>
-                <div className="mt-2 flex items-center gap-2">
-                  <DateFieldPopover
-                    value={log.consultation_date}
-                    onChange={(date) => handleLogDateChange(log.id, date)}
-                    allowClear={false}
-                    className="h-8 w-auto text-xs"
-                  />
-                  <span className="text-xs text-gray-400">
-                    {new Date(log.created_at).toLocaleString("ko-KR")}
-                  </span>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon" className="ml-auto size-8 text-gray-400 hover:text-red-600">
-                        <Trash2 className="size-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>상담 이력을 삭제하시겠습니까?</AlertDialogTitle>
-                        <AlertDialogDescription>삭제한 이력은 복구할 수 없습니다.</AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>취소</AlertDialogCancel>
-                        <AlertDialogAction
-                          className={buttonVariants({ variant: "destructive" })}
-                          onClick={() => handleDeleteLog(log.id)}
-                        >
-                          삭제
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        <div className="space-y-2 rounded-md border border-blue-100 bg-white p-3">
-          <DateFieldPopover value={consultationDate} onChange={(date) => setConsultationDate(date ?? today())} allowClear={false} />
           <Textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
@@ -178,6 +125,69 @@ export function ConsultationTab({ application, onSave, saving }: ConsultationTab
           </Button>
         </div>
       </div>
+
+      {/* 구분선 */}
+      <div className="flex items-center gap-2">
+        <div className="flex-1 h-px bg-blue-200" />
+        <span className="text-xs font-semibold text-blue-400 uppercase tracking-wide">
+          상담 이력
+          {logs.length > 0 && (
+            <span className="ml-1.5 bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">
+              {logs.length}건
+            </span>
+          )}
+        </span>
+        <div className="flex-1 h-px bg-blue-200" />
+      </div>
+
+      {/* 이력 목록 — 하단 */}
+      {error && <p className="text-xs text-red-500">{error}</p>}
+      {loadingLogs ? (
+        <p className="text-sm text-blue-400">불러오는 중...</p>
+      ) : logs.length === 0 ? (
+        <p className="text-sm text-blue-400">상담 이력이 없습니다.</p>
+      ) : (
+        <ul className="space-y-2">
+          {logs.map((log) => (
+            <li key={log.id} className="rounded-md border border-blue-100 bg-white p-3 text-sm">
+              <p className="whitespace-pre-wrap text-gray-900">{log.content}</p>
+              <div className="mt-2 flex items-center gap-2">
+                <DateFieldPopover
+                  value={log.consultation_date}
+                  onChange={(date) => handleLogDateChange(log.id, date)}
+                  allowClear={false}
+                  className="h-8 w-auto text-xs"
+                />
+                <span className="text-xs text-gray-400">
+                  {new Date(log.created_at).toLocaleString("ko-KR")}
+                </span>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="ml-auto size-8 text-gray-400 hover:text-red-600">
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>상담 이력을 삭제하시겠습니까?</AlertDialogTitle>
+                      <AlertDialogDescription>삭제한 이력은 복구할 수 없습니다.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>취소</AlertDialogCancel>
+                      <AlertDialogAction
+                        className={buttonVariants({ variant: "destructive" })}
+                        onClick={() => handleDeleteLog(log.id)}
+                      >
+                        삭제
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

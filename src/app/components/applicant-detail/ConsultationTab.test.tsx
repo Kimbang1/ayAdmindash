@@ -13,12 +13,10 @@ vi.mock("./DateFieldPopover", () => ({
   DateFieldPopover: ({
     value,
     onChange,
-    placeholder,
   }: {
     value: string | null;
     onChange: (date: string | null) => void;
-    placeholder?: string;
-  }) => <button onClick={() => onChange("2026-07-10")}>{value ?? placeholder ?? "date"}</button>,
+  }) => <button onClick={() => onChange("2026-07-10")}>{value ?? "date"}</button>,
 }));
 
 vi.mock("../../lib/api", () => ({
@@ -39,21 +37,16 @@ beforeEach(() => {
 });
 
 describe("ConsultationTab", () => {
-  it("상담 예정일을 선택하면 onSave가 scheduled_date와 함께 호출된다", async () => {
-    const onSave = vi.fn();
-    render(<ConsultationTab application={buildApplication()} onSave={onSave} saving={false} />);
-
-    const dateButton = await screen.findByText("상담 예정일을 선택하세요");
-    fireEvent.click(dateButton);
-
-    expect(onSave).toHaveBeenCalledWith({ scheduled_date: "2026-07-10" });
+  it("이력이 없으면 안내 문구를 보여준다", async () => {
+    render(<ConsultationTab application={buildApplication()} onSave={vi.fn()} saving={false} />);
+    expect(await screen.findByText("상담 이력이 없습니다.")).toBeInTheDocument();
   });
 
   it("상담 내용을 입력하고 등록하면 addConsultation이 호출되고 입력란이 초기화된다", async () => {
     mockedApi.addConsultation.mockResolvedValue({ log: {} });
     render(<ConsultationTab application={buildApplication()} onSave={vi.fn()} saving={false} />);
 
-    await screen.findByText("상담 예정일을 선택하세요");
+    await screen.findByText("상담 이력이 없습니다.");
 
     const textarea = screen.getByPlaceholderText("상담 내용을 입력하세요");
     fireEvent.change(textarea, { target: { value: "초기 상담 진행" } });
