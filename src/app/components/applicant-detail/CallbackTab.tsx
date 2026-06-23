@@ -88,10 +88,45 @@ export function CallbackTab({ application }: CallbackTabProps) {
 
   return (
     <div className="space-y-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
-      <h3 className="text-sm font-semibold text-amber-900">재전화문의 이력</h3>
+      {/* 입력 폼 — 상단 */}
+      <div className="rounded-xl border-2 border-amber-300 bg-white p-3 shadow-sm">
+        <h3 className="mb-2 flex items-center gap-1 text-xs font-bold text-amber-700">
+          📲 새 재전화문의 등록
+        </h3>
+        <div className="space-y-2">
+          <DateFieldPopover
+            value={callbackDate}
+            onChange={(date) => setCallbackDate(date ?? today())}
+            allowClear={false}
+          />
+          <Textarea
+            value={memo}
+            onChange={(e) => setMemo(e.target.value)}
+            placeholder="재전화문의 내용을 입력하세요"
+            rows={3}
+          />
+          <Button onClick={handleSubmit} disabled={!memo.trim() || submitting} size="sm">
+            등록
+          </Button>
+        </div>
+      </div>
 
+      {/* 구분선 */}
+      <div className="flex items-center gap-2">
+        <div className="flex-1 h-px bg-amber-200" />
+        <span className="text-xs font-semibold text-amber-400 uppercase tracking-wide">
+          재전화 이력
+          {logs.length > 0 && (
+            <span className="ml-1.5 bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">
+              {logs.length}건
+            </span>
+          )}
+        </span>
+        <div className="flex-1 h-px bg-amber-200" />
+      </div>
+
+      {/* 이력 목록 — 하단 */}
       {error && <p className="text-xs text-red-500">{error}</p>}
-
       {loadingLogs ? (
         <p className="text-sm text-amber-500">불러오는 중...</p>
       ) : logs.length === 0 ? (
@@ -132,19 +167,6 @@ export function CallbackTab({ application }: CallbackTabProps) {
           ))}
         </ul>
       )}
-
-      <div className="space-y-2 rounded-md border border-amber-100 bg-white p-3">
-        <DateFieldPopover value={callbackDate} onChange={(date) => setCallbackDate(date ?? today())} allowClear={false} />
-        <Textarea
-          value={memo}
-          onChange={(e) => setMemo(e.target.value)}
-          placeholder="재전화문의 내용을 입력하세요"
-          rows={3}
-        />
-        <Button onClick={handleSubmit} disabled={!memo.trim() || submitting} size="sm">
-          등록
-        </Button>
-      </div>
     </div>
   );
 }
