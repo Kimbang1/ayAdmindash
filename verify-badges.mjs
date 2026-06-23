@@ -1,7 +1,12 @@
+// Usage: ADMIN_PASSWORD=<password> node verify-badges.mjs
 import { chromium } from 'playwright';
 
-const PASSWORD = 'admin1234';
+const PASSWORD = process.env.ADMIN_PASSWORD;
 const BASE = 'http://localhost:5173';
+
+if (!PASSWORD) {
+  throw new Error('ADMIN_PASSWORD environment variable is required');
+}
 
 const browser = await chromium.launch();
 const context = await browser.newContext();

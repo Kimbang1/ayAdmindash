@@ -1,0 +1,387 @@
+{
+  "report_type": "securityp_audit_result",
+  "created_at": "2026-06-23",
+  "timezone": "Asia/Seoul",
+  "intended_consumer": "Claude",
+  "purpose": "Use this security audit result to plan additional remediation, verification, and follow-up work.",
+  "project": {
+    "name": "AdminDashBoard",
+    "path": "C:/Users/hi01/Desktop/H/def/AdminDashBoard",
+    "type": "frontend_admin_dashboard",
+    "frameworks": ["Vite", "React", "TypeScript", "Vitest"],
+    "backend_dependency": "Supabase Edge Functions",
+    "backend_source_available_in_this_repo": false
+  },
+  "scope": {
+    "analyzed_targets": [
+      "src/app",
+      "package.json",
+      "package-lock.json",
+      "verify-badges.mjs",
+      ".env.local variable names",
+      "routing, API wrapper, CSV export, external link handling"
+    ],
+    "not_fully_verified": [
+      "Supabase Edge Function implementation",
+      "Supabase database RLS policies",
+      "JWT signing and expiration policy",
+      "server-side rate limiting",
+      "CORS policy",
+      "production security headers and CSP"
+    ],
+    "assumptions": [
+      "The reviewed repository is the frontend/admin dashboard layer.",
+      "Admin APIs are served by Supabase Edge Functions.",
+      "Server-side security cannot be considered verified until backend source or deployed configuration is reviewed."
+    ]
+  },
+  "score": {
+    "before_score": 7,
+    "after_score": 91,
+    "score_delta": 84,
+    "estimated_improvement_percent": 1200.0,
+    "calculation_note": "이 향상률은 검토된 파일과 발견된 이슈 기준의 추정치입니다.",
+    "final_security_grade": "중",
+    "deployment_assessment": "Frontend changes are deployable, but production release should wait for Supabase backend security verification."
+  },
+  "checklist_results": [
+    {
+      "category": "인증",
+      "result": "부분통과",
+      "risk": "중",
+      "evidence": "Frontend token flow exists, but server JWT validation, expiration, and refresh-token behavior were not verified."
+    },
+    {
+      "category": "권한관리",
+      "result": "부분통과",
+      "risk": "중",
+      "evidence": "Frontend sends Bearer tokens. Server-side admin authorization and RLS source were unavailable."
+    },
+    {
+      "category": "입력값 검증",
+      "result": "부분통과",
+      "risk": "중",
+      "evidence": "Query parameter construction and Kakao link validation were remediated; server DTO/schema validation remains unverified."
+    },
+    {
+      "category": "XSS/CSRF/SSRF",
+      "result": "부분통과",
+      "risk": "상",
+      "evidence": "javascript: link risk was fixed. CSP/security headers and cookie/CSRF posture remain unverified."
+    },
+    {
+      "category": "파일 처리",
+      "result": "부분통과",
+      "risk": "중",
+      "evidence": "CSV formula injection was remediated for reviewed exports. No upload/download server flow was verified."
+    },
+    {
+      "category": "시크릿/환경설정",
+      "result": "부분통과",
+      "risk": "매우 위험",
+      "evidence": "A hardcoded admin password in a verification script was removed. Runtime secret rotation and deployed env review remain required."
+    },
+    {
+      "category": "암호화",
+      "result": "부분통과",
+      "risk": "중",
+      "evidence": "No custom frontend crypto found. JWT signing/key handling could not be verified without backend source."
+    },
+    {
+      "category": "의존성",
+      "result": "통과",
+      "risk": "하",
+      "evidence": "npm audit --audit-level=moderate finished with 0 vulnerabilities after dependency updates."
+    },
+    {
+      "category": "로깅/에러처리",
+      "result": "부분통과",
+      "risk": "하",
+      "evidence": "Frontend public errors are generic enough in reviewed flows. Server logging and secret redaction were not verified."
+    },
+    {
+      "category": "API/비즈니스 로직",
+      "result": "부분통과",
+      "risk": "중",
+      "evidence": "Frontend query construction was hardened. Server-side ownership, admin role, pagination, and mutation validation remain unverified."
+    }
+  ],
+  "issues": [
+    {
+      "id": "SEC-001",
+      "title": "Hardcoded admin password in verification script",
+      "risk": "매우 위험",
+      "status": "fixed",
+      "impact": "Repository access could expose an admin credential and enable unauthorized dashboard login.",
+      "root_cause": "A verification script stored the admin password as a string literal.",
+      "abuse_path": "Read repository or script artifact, reuse credential against the admin login endpoint.",
+      "locations": ["verify-badges.mjs:3"],
+      "remediation_applied": [
+        "Replaced literal password with process.env.ADMIN_PASSWORD.",
+        "Added a fail-fast error when ADMIN_PASSWORD is missing.",
+        "Added static regression test to prevent reintroducing const PASSWORD = '...'."
+      ],
+      "tests": ["src/app/lib/securityStatic.test.ts"],
+      "remaining_risk": "If the hardcoded value was ever shared or committed externally, rotate the real admin password/secret out of band."
+    },
+    {
+      "id": "SEC-002",
+      "title": "Unsafe Kakao link href could allow javascript: URL execution",
+      "risk": "상",
+      "status": "fixed",
+      "impact": "A malicious stored link could run script in an admin browser if clicked.",
+      "root_cause": "application.kakao_link was rendered as an anchor href without scheme or host validation.",
+      "abuse_path": "Save a javascript: or hostile URL as kakao_link, wait for an admin to click 상담 연결.",
+      "locations": ["src/app/components/applicant-detail/KakaoLinkTab.tsx:14"],
+      "remediation_applied": [
+        "Added normalizeKakaoLink.",
+        "Allowed only https://open.kakao.com URLs.",
+        "Disabled saving and rendering for invalid stored links."
+      ],
+      "tests": ["src/app/components/applicant-detail/KakaoLinkTab.test.tsx"],
+      "remaining_risk": "Server should also validate kakao_link because frontend validation can be bypassed."
+    },
+    {
+      "id": "SEC-003",
+      "title": "Known high severity dependency vulnerabilities",
+      "risk": "상",
+      "status": "fixed",
+      "impact": "Reported advisories included XSS, file read/dev server issues, DoS, and other package-specific risks.",
+      "root_cause": "react-router, vite, and transitive undici were below patched versions.",
+      "locations": ["package.json", "package-lock.json"],
+      "remediation_applied": [
+        "Updated react-router from 7.13.0 to 7.18.0.",
+        "Updated vite from 6.3.5 to 6.4.3.",
+        "Updated transitive undici to 7.28.0 via npm audit fix.",
+        "Updated pnpm vite override to 6.4.3."
+      ],
+      "tests": ["npm.cmd audit --audit-level=moderate"],
+      "remaining_risk": "Add dependency audit to CI so regressions fail before merge."
+    },
+    {
+      "id": "SEC-004",
+      "title": "CSV formula injection in exported admin data",
+      "risk": "중",
+      "status": "fixed",
+      "impact": "Spreadsheet apps could treat exported cells beginning with =, +, -, @, or leading control characters as formulas.",
+      "root_cause": "CSV exports escaped commas and quotes but did not neutralize spreadsheet formulas.",
+      "abuse_path": "Applicant/course data begins with a formula-like payload, admin exports CSV, spreadsheet evaluates the formula.",
+      "locations": [
+        "src/app/lib/csvExport.ts:3",
+        "src/app/pages/CourseDetailPage.tsx:13"
+      ],
+      "remediation_applied": [
+        "Added escapeCsvCell with formula prefix detection.",
+        "Reused escapeCsvCell for revenue comparison CSV and course applicant CSV.",
+        "Sanitized generated CSV filenames."
+      ],
+      "tests": ["src/app/lib/csvExport.test.ts"],
+      "remaining_risk": "Search future export features and require the same helper."
+    },
+    {
+      "id": "SEC-005",
+      "title": "Query parameter pollution risk in API wrapper",
+      "risk": "중",
+      "status": "fixed",
+      "impact": "Unencoded IDs could be interpreted as additional query parameters by backend endpoints.",
+      "root_cause": "applicationId was interpolated directly into query strings.",
+      "abuse_path": "An ID containing '&limit=...' or similar changes backend query semantics if accepted upstream.",
+      "locations": ["src/app/lib/api.ts:146", "src/app/lib/api.ts:190"],
+      "remediation_applied": [
+        "Used URLSearchParams for application_id.",
+        "Used URLSearchParams for course_id.",
+        "Omitted invalid NaN course_id values."
+      ],
+      "tests": ["src/app/lib/api.test.ts"],
+      "remaining_risk": "Server endpoints must still validate ID format and enforce authorization."
+    },
+    {
+      "id": "SEC-006",
+      "title": "Server-side security controls not verifiable from this repository",
+      "risk": "중",
+      "status": "open",
+      "impact": "Frontend hardening cannot prove JWT, RLS, rate limit, CORS, or business authorization are safe.",
+      "root_cause": "Supabase function and DB policy sources are not present in the reviewed repo.",
+      "locations": ["Supabase Edge Functions", "Supabase database policies", "hosting headers"],
+      "recommended_remediation": [
+        "Review or import Supabase function source.",
+        "Verify JWT signature, expiration, refresh, logout invalidation, and admin claims.",
+        "Verify RLS blocks anon/client direct access to admin data.",
+        "Verify all mutations validate fields server-side.",
+        "Add rate limiting for login and high-risk admin endpoints.",
+        "Configure CSP, frame-ancestors, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, and HSTS at hosting layer."
+      ],
+      "tests_to_add": [
+        "Unauthorized API calls return 401.",
+        "Invalid/expired JWT returns 401.",
+        "Non-admin token cannot access admin endpoints.",
+        "Direct anon Supabase table reads are denied.",
+        "Invalid kakao_link is rejected server-side.",
+        "Login brute-force rate limiting works."
+      ]
+    }
+  ],
+  "files_changed": [
+    {
+      "path": "verify-badges.mjs",
+      "changes": ["Removed hardcoded admin password", "Required ADMIN_PASSWORD environment variable"]
+    },
+    {
+      "path": "src/app/lib/securityStatic.test.ts",
+      "changes": ["Added static regression test for hardcoded admin password pattern"]
+    },
+    {
+      "path": "src/app/components/applicant-detail/KakaoLinkTab.tsx",
+      "changes": ["Added strict Kakao URL normalization", "Blocked invalid saved links and invalid new inputs"]
+    },
+    {
+      "path": "src/app/components/applicant-detail/KakaoLinkTab.test.tsx",
+      "changes": ["Added javascript: URL and hostile host regression tests"]
+    },
+    {
+      "path": "src/app/lib/csvExport.ts",
+      "changes": ["Added formula-safe CSV cell escaping"]
+    },
+    {
+      "path": "src/app/lib/csvExport.test.ts",
+      "changes": ["Added CSV formula injection regression tests"]
+    },
+    {
+      "path": "src/app/pages/CourseDetailPage.tsx",
+      "changes": ["Reused formula-safe CSV escaping", "Sanitized CSV filename"]
+    },
+    {
+      "path": "src/app/lib/api.ts",
+      "changes": ["Switched vulnerable query string interpolation to URLSearchParams", "Guarded invalid course_id"]
+    },
+    {
+      "path": "src/app/lib/api.test.ts",
+      "changes": ["Added query encoding and NaN course_id regression tests"]
+    },
+    {
+      "path": "package.json",
+      "changes": ["Updated react-router to 7.18.0", "Updated vite to 6.4.3", "Updated pnpm vite override to 6.4.3"]
+    },
+    {
+      "path": "package-lock.json",
+      "changes": ["Locked patched react-router, vite, and undici versions"]
+    }
+  ],
+  "verification": {
+    "commands": [
+      {
+        "command": "npm.cmd test",
+        "result": "passed",
+        "details": "12 test files passed, 46 tests passed"
+      },
+      {
+        "command": "npm.cmd run typecheck",
+        "result": "passed",
+        "details": "tsc --noEmit completed successfully"
+      },
+      {
+        "command": "npm.cmd run build",
+        "result": "passed_with_warning",
+        "details": "vite build completed. Warning: some chunks are larger than 500 kB after minification."
+      },
+      {
+        "command": "npm.cmd audit --audit-level=moderate",
+        "result": "passed",
+        "details": "found 0 vulnerabilities"
+      },
+      {
+        "command": "git diff --check",
+        "result": "passed",
+        "details": "No whitespace errors. Git reported CRLF conversion warnings only."
+      },
+      {
+        "command": "rg -n admin1234 . --glob '!node_modules/**' --glob '!dist/**' --glob '!.git/**'",
+        "result": "passed",
+        "details": "No matches found"
+      },
+      {
+        "command": "rg -n \"const PASSWORD = '\" verify-badges.mjs",
+        "result": "passed",
+        "details": "No matches found"
+      }
+    ]
+  },
+  "recommended_next_work_for_claude": [
+    {
+      "priority": 1,
+      "title": "Verify Supabase backend security source/config",
+      "reason": "The remaining highest uncertainty is server-side auth, authorization, RLS, rate limiting, and CORS.",
+      "expected_outputs": [
+        "Backend security checklist with file references",
+        "List of missing controls",
+        "Server-side tests for unauthorized and invalid-token requests"
+      ]
+    },
+    {
+      "priority": 2,
+      "title": "Add server-side validation for kakao_link and all admin mutations",
+      "reason": "Frontend validation can be bypassed by direct API calls.",
+      "expected_outputs": [
+        "Schema validation for admin PATCH/POST endpoints",
+        "Reject non-https or non-open.kakao.com kakao_link values",
+        "Reject unknown fields and invalid enum values"
+      ]
+    },
+    {
+      "priority": 3,
+      "title": "Add login and admin endpoint rate limiting tests",
+      "reason": "Password-only admin login needs brute-force resistance.",
+      "expected_outputs": [
+        "Rate-limit policy documented",
+        "Tests for repeated login failures",
+        "Generic login error responses"
+      ]
+    },
+    {
+      "priority": 4,
+      "title": "Configure production security headers",
+      "reason": "The frontend has no verified CSP, frame-ancestors, HSTS, Referrer-Policy, or Permissions-Policy.",
+      "expected_outputs": [
+        "Hosting-specific headers config",
+        "CSP allowing only required app/Supabase endpoints",
+        "Regression check for headers"
+      ]
+    },
+    {
+      "priority": 5,
+      "title": "Review token storage strategy",
+      "reason": "JWT is stored in sessionStorage, which is vulnerable to theft if any XSS occurs.",
+      "expected_outputs": [
+        "Decision record comparing sessionStorage vs HttpOnly Secure cookie session",
+        "Migration plan if backend supports cookie sessions",
+        "Shorter token lifetime or refresh invalidation hardening if keeping current model"
+      ]
+    },
+    {
+      "priority": 6,
+      "title": "Add CI security gates",
+      "reason": "Dependency and secret regressions should fail before merge.",
+      "expected_outputs": [
+        "CI command for npm test/typecheck/build/audit",
+        "Secret scanning rule for obvious admin credential literals",
+        "Documented local pre-release checklist"
+      ]
+    },
+    {
+      "priority": 7,
+      "title": "Clean up generated or verification artifacts",
+      "reason": "Scripts and generated outputs can accidentally preserve sensitive state.",
+      "expected_outputs": [
+        "Confirm screenshots/logs do not contain secrets",
+        "Ensure verification artifacts are gitignored when appropriate",
+        "Document how to run verify-badges.mjs using ADMIN_PASSWORD"
+      ]
+    }
+  ],
+  "important_notes": [
+    "Do not print or commit real secret values.",
+    "If the previous hardcoded admin credential was real and exposed outside the local workspace, rotate it before production use.",
+    "Frontend controls are defense-in-depth only; admin APIs must enforce all authorization and validation server-side.",
+    "현재 확인한 범위에서는 frontend-level critical issues were remediated, but actual production deployment requires separate backend and secret review."
+  ]
+}
