@@ -11,6 +11,18 @@ interface KakaoLinkTabProps {
   saving: boolean;
 }
 
+function normalizeKakaoLink(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  try {
+    const url = new URL(trimmed);
+    if (url.protocol !== "https:" || url.hostname !== "open.kakao.com") return null;
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
 export function KakaoLinkTab({ application, onSave, saving }: KakaoLinkTabProps) {
   const [link, setLink] = useState(application.kakao_link ?? "");
 
@@ -19,6 +31,8 @@ export function KakaoLinkTab({ application, onSave, saving }: KakaoLinkTabProps)
   }, [application.kakao_link]);
 
   const isDirty = link !== (application.kakao_link ?? "");
+  const normalizedLink = normalizeKakaoLink(link);
+  const savedLink = normalizeKakaoLink(application.kakao_link ?? "");
 
   return (
     <div className="space-y-4 rounded-xl border border-yellow-200 bg-yellow-50 p-4">
@@ -30,19 +44,23 @@ export function KakaoLinkTab({ application, onSave, saving }: KakaoLinkTabProps)
           onChange={(e) => setLink(e.target.value)}
           placeholder="https://open.kakao.com/..."
           disabled={saving}
+          aria-invalid={normalizedLink === null}
         />
         <Button
           size="sm"
-          disabled={!isDirty || saving}
-          onClick={() => onSave({ kakao_link: link })}
+          disabled={!isDirty || saving || normalizedLink === null}
+          onClick={() => {
+            if (normalizedLink === null) return;
+            onSave({ kakao_link: normalizedLink });
+          }}
         >
           저장
         </Button>
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {application.kakao_link ? (
-          <a href={application.kakao_link} target="_blank" rel="noopener noreferrer">
+        {savedLink ? (
+          <a href={savedLink} target="_blank" rel="noopener noreferrer">
             <Button variant="outline" size="sm">
               상담 연결
             </Button>

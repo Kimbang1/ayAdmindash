@@ -10,24 +10,37 @@ import { useApplications } from "../lib/useApplications";
 import { useCourses } from "../lib/useCourses";
 import { useAuth } from "../lib/auth";
 import { updateApplication } from "../lib/api";
+import { escapeCsvCell } from "../lib/csvExport";
 import { toApplicants } from "../lib/transform";
 import type { Applicant } from "../lib/transform";
 import { toast } from "sonner";
 
 const DETAIL_WINDOW_FEATURES = "width=560,height=900";
 
+function safeCsvFilename(value: string): string {
+  return value.replace(/[\\/:*?"<>|\r\n]+/g, "_").trim().slice(0, 80) || "course";
+}
+
 function exportCSV(courseTitle: string, applicants: Applicant[]) {
   const header = "번호,이름,나이,연락처,신청일,상담상태,등록상태";
   const rows = applicants.map(
     (applicant) =>
-      `${applicant.id},${applicant.name},${applicant.age},${applicant.phone},${applicant.appliedDate},${applicant.consultationStatus},${applicant.enrollmentStatus}`
+      [
+        applicant.id,
+        applicant.name,
+        applicant.age,
+        applicant.phone,
+        applicant.appliedDate,
+        applicant.consultationStatus,
+        applicant.enrollmentStatus,
+      ].map(escapeCsvCell).join(",")
   );
   const csv = [header, ...rows].join("\n");
   const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `${courseTitle}_신청자명단.csv`;
+  anchor.download = `${safeCsvFilename(courseTitle)}_신청자명단.csv`;
   anchor.click();
   URL.revokeObjectURL(url);
 }

@@ -1,11 +1,14 @@
 import type { RevenueComparisonDetail, RevenueComparisonParams } from './types'
 
-function escapeCsv(value: string | number): string {
+const CSV_FORMULA_PREFIX = /^[\t\r\n]|^\s*[=+\-@]/
+
+export function escapeCsvCell(value: string | number): string {
   const str = String(value)
-  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-    return `"${str.replace(/"/g, '""')}"`
+  const safe = typeof value === 'string' && CSV_FORMULA_PREFIX.test(str) ? `'${str}` : str
+  if (/[",\r\n]/.test(safe)) {
+    return `"${safe.replace(/"/g, '""')}"`
   }
-  return str
+  return safe
 }
 
 export function buildCsvString(details: RevenueComparisonDetail[]): string {
@@ -18,7 +21,7 @@ export function buildCsvString(details: RevenueComparisonDetail[]): string {
     row.registrations,
     row.revenue,
   ])
-  return [headers, ...rows].map((row) => row.map(escapeCsv).join(',')).join('\n')
+  return [headers, ...rows].map((row) => row.map(escapeCsvCell).join(',')).join('\n')
 }
 
 export function exportRevenueComparisonCsv(

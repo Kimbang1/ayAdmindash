@@ -60,7 +60,9 @@ export const refreshToken = (token: string) =>
   })
 
 export const getApplications = (token: string, courseId?: number): Promise<GetApplicationsResponse> => {
-  const qs = courseId != null ? `?course_id=${courseId}` : ''
+  const qs = courseId != null && Number.isFinite(courseId)
+    ? `?${new URLSearchParams({ course_id: String(courseId) }).toString()}`
+    : ''
   return callEdge<GetApplicationsResponse>(`/admin${qs}`, {
     headers: { Authorization: `Bearer ${token}` },
   })
@@ -140,10 +142,12 @@ export const getAdminStats = (token: string, month?: string) =>
     headers: { Authorization: `Bearer ${token}` },
   })
 
-export const getConsultations = (token: string, applicationId: string): Promise<{ logs: ConsultationLog[] }> =>
-  callEdge<{ logs: ConsultationLog[] }>(`/admin-consultations?application_id=${applicationId}`, {
+export const getConsultations = (token: string, applicationId: string): Promise<{ logs: ConsultationLog[] }> => {
+  const qs = new URLSearchParams({ application_id: applicationId }).toString()
+  return callEdge<{ logs: ConsultationLog[] }>(`/admin-consultations?${qs}`, {
     headers: { Authorization: `Bearer ${token}` },
   })
+}
 
 export const addConsultation = (
   token: string,
@@ -182,10 +186,12 @@ export const deleteConsultation = (token: string, logId: string) =>
     body: JSON.stringify({ id: logId }),
   })
 
-export const getCallbacks = (token: string, applicationId: string): Promise<{ logs: CallbackLog[] }> =>
-  callEdge<{ logs: CallbackLog[] }>(`/admin-callbacks?application_id=${applicationId}`, {
+export const getCallbacks = (token: string, applicationId: string): Promise<{ logs: CallbackLog[] }> => {
+  const qs = new URLSearchParams({ application_id: applicationId }).toString()
+  return callEdge<{ logs: CallbackLog[] }>(`/admin-callbacks?${qs}`, {
     headers: { Authorization: `Bearer ${token}` },
   })
+}
 
 export const addCallback = (
   token: string,

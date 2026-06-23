@@ -18,7 +18,7 @@ describe("KakaoLinkTab", () => {
     render(<KakaoLinkTab application={buildApplication()} onSave={onSave} saving={false} />);
 
     const input = screen.getByPlaceholderText("https://open.kakao.com/...");
-    fireEvent.change(input, { target: { value: "https://open.kakao.com/test" } });
+    fireEvent.change(input, { target: { value: " https://open.kakao.com/test " } });
 
     const saveButton = screen.getByRole("button", { name: "저장" });
     expect(saveButton).toBeEnabled();
@@ -26,6 +26,35 @@ describe("KakaoLinkTab", () => {
     fireEvent.click(saveButton);
 
     expect(onSave).toHaveBeenCalledWith({ kakao_link: "https://open.kakao.com/test" });
+  });
+
+  it("javascript URL은 저장하거나 링크로 렌더링하지 않는다", () => {
+    const onSave = vi.fn();
+    render(
+      <KakaoLinkTab
+        application={buildApplication({ kakao_link: "javascript:alert(1)" })}
+        onSave={onSave}
+        saving={false}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "상담 연결" })).toBeDisabled();
+
+    const input = screen.getByPlaceholderText("https://open.kakao.com/...");
+    fireEvent.change(input, { target: { value: "javascript:alert(1)" } });
+
+    expect(input).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByRole("button", { name: "저장" })).toBeDisabled();
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
+  it("open.kakao.com 외부 호스트는 저장하지 않는다", () => {
+    render(<KakaoLinkTab application={buildApplication()} onSave={vi.fn()} saving={false} />);
+
+    const input = screen.getByPlaceholderText("https://open.kakao.com/...");
+    fireEvent.change(input, { target: { value: "https://open.kakao.com.evil.test/room" } });
+
+    expect(screen.getByRole("button", { name: "저장" })).toBeDisabled();
   });
 
   it("기존 링크가 있으면 상담 연결 버튼이 활성화된다", () => {

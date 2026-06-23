@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { buildCsvString } from './csvExport'
+import { buildCsvString, escapeCsvCell } from './csvExport'
 import type { RevenueComparisonDetail } from './types'
 
 const detail: RevenueComparisonDetail = {
@@ -41,5 +41,20 @@ describe('buildCsvString', () => {
     const csv = buildCsvString([detail])
     expect(csv.startsWith('﻿')).toBe(false)
     expect(csv.startsWith('기간')).toBe(true)
+  })
+
+  it('escapes leading formula characters for spreadsheet exports', () => {
+    expect(escapeCsvCell('=HYPERLINK("https://example.com")')).toBe(
+      '"\'=HYPERLINK(""https://example.com"")"'
+    )
+    expect(escapeCsvCell('+SUM(1,1)')).toBe('"\'+SUM(1,1)"')
+    expect(escapeCsvCell('@cmd')).toBe("'@cmd")
+  })
+
+  it('prevents formula injection when building CSV rows', () => {
+    const csv = buildCsvString([
+      { ...detail, course_name: '=IMPORTXML("https://example.com","//a")' },
+    ])
+    expect(csv).toContain('"\'=IMPORTXML(""https://example.com"",""//a"")"')
   })
 })
