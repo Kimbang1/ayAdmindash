@@ -1,0 +1,55 @@
+name: CI Security Gates
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  security-gates:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm run test
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Build project
+        run: npm run build
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=moderate
+
+      - name: Check for hardcoded secrets
+        run: |
+          if grep -rn "const PASSWORD\s*=\s*['\"]" . --include="*.mjs" --include="*.ts" --include="*.tsx" | grep -v node_modules | grep -v dist; then
+            echo "ERROR: Hardcoded PASSWORD found"
+            exit 1
+          fi
+          if grep -rn "apiKey\s*=\s*['\"]" . --include="*.mjs" --include="*.ts" --include="*.tsx" | grep -v node_modules | grep -v dist; then
+            echo "ERROR: Hardcoded apiKey found"
+            exit 1
+          fi
+          if grep -rn "secret\s*=\s*['\"]" . --include="*.mjs" --include="*.ts" --include="*.tsx" | grep -v node_modules | grep -v dist; then
+            echo "ERROR: Hardcoded secret found"
+            exit 1
+          fi
+          echo "No hardcoded secrets detected"
