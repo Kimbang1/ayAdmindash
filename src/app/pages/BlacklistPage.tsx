@@ -8,7 +8,7 @@ import { calcAge } from "../lib/transform"
 import { PAGE_HEADERS } from "../lib/design"
 import type { Application } from "../lib/types"
 
-const DETAIL_WINDOW_FEATURES = "width=560,height=900"
+const DETAIL_WINDOW_FEATURES = "width=1120,height=900"
 
 export function BlacklistPage() {
   const { token } = useAuth()

@@ -15,7 +15,7 @@ import { toApplicants } from "../lib/transform";
 import type { Applicant } from "../lib/transform";
 import { toast } from "sonner";
 
-const DETAIL_WINDOW_FEATURES = "width=560,height=900";
+const DETAIL_WINDOW_FEATURES = "width=1120,height=900";
 
 function safeCsvFilename(value: string): string {
   return value.replace(/[\\/:*?"<>|\r\n]+/g, "_").trim().slice(0, 80) || "course";
