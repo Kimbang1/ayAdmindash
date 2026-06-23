@@ -202,20 +202,22 @@ export function ApplicantDetailPage() {
             })}
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4">
-            {activeTab === "consultation" && (
-              <ConsultationTab application={current} onSave={handleSave} saving={saving} />
-            )}
-            {activeTab === "enrollment" && (
-              <EnrollmentTab application={current} onSave={handleSave} saving={saving} />
-            )}
-            {activeTab === "callback" && <CallbackTab application={current} />}
-            {activeTab === "kakao" && (
-              <KakaoLinkTab application={current} onSave={handleSave} saving={saving} />
-            )}
-            {activeTab === "blacklist" && (
-              <BlacklistTab application={current} onSave={handleSave} saving={saving} />
-            )}
+          <div className="flex-1 overflow-hidden p-4">
+            <div className="h-full">
+              {activeTab === "consultation" && (
+                <ConsultationTab application={current} onSave={handleSave} saving={saving} />
+              )}
+              {activeTab === "enrollment" && (
+                <EnrollmentTab application={current} onSave={handleSave} saving={saving} />
+              )}
+              {activeTab === "callback" && <CallbackTab application={current} />}
+              {activeTab === "kakao" && (
+                <KakaoLinkTab application={current} onSave={handleSave} saving={saving} />
+              )}
+              {activeTab === "blacklist" && (
+                <BlacklistTab application={current} onSave={handleSave} saving={saving} />
+              )}
+            </div>
           </div>
         </div>
       </div>

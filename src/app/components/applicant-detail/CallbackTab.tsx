@@ -87,9 +87,9 @@ export function CallbackTab({ application }: CallbackTabProps) {
   };
 
   return (
-    <div className="space-y-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+    <div className="flex h-full flex-col gap-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
       {/* 입력 폼 — 상단 */}
-      <div className="rounded-xl border-2 border-amber-300 bg-white p-3 shadow-sm">
+      <div className="shrink-0 rounded-xl border-2 border-amber-300 bg-white p-3 shadow-sm">
         <h3 className="mb-2 flex items-center gap-1 text-xs font-bold text-amber-700">
           📲 새 재전화문의 등록
         </h3>
@@ -112,7 +112,7 @@ export function CallbackTab({ application }: CallbackTabProps) {
       </div>
 
       {/* 구분선 */}
-      <div className="flex items-center gap-2">
+      <div className="shrink-0 flex items-center gap-2">
         <div className="flex-1 h-px bg-amber-200" />
         <span className="text-xs font-semibold text-amber-400 uppercase tracking-wide">
           재전화 이력
@@ -125,9 +125,9 @@ export function CallbackTab({ application }: CallbackTabProps) {
         <div className="flex-1 h-px bg-amber-200" />
       </div>
 
-      {/* 이력 목록 — 하단 고정 높이 */}
-      {error && <p className="text-xs text-red-500">{error}</p>}
-      <div className="h-48 overflow-y-auto">
+      {/* 이력 목록 — 남은 높이 채움 */}
+      {error && <p className="shrink-0 text-xs text-red-500">{error}</p>}
+      <div className="flex-1 overflow-y-auto">
         {loadingLogs ? (
           <p className="text-sm text-amber-500">불러오는 중...</p>
         ) : logs.length === 0 ? (
