@@ -40,15 +40,15 @@ jobs:
 
       - name: Check for hardcoded secrets
         run: |
-          if grep -rn "const PASSWORD\s*=\s*['\"]" . --include="*.mjs" --include="*.ts" --include="*.tsx" | grep -v node_modules | grep -v dist; then
+          if grep -rEn "const PASSWORD[[:space:]]*=[[:space:]]*['\"]" . --include="*.mjs" --include="*.ts" --include="*.tsx" | grep -v node_modules | grep -v dist; then
             echo "ERROR: Hardcoded PASSWORD found"
             exit 1
           fi
-          if grep -rn "apiKey\s*=\s*['\"]" . --include="*.mjs" --include="*.ts" --include="*.tsx" | grep -v node_modules | grep -v dist; then
+          if grep -rEn "apiKey[[:space:]]*=[[:space:]]*['\"]" . --include="*.mjs" --include="*.ts" --include="*.tsx" | grep -v node_modules | grep -v dist; then
             echo "ERROR: Hardcoded apiKey found"
             exit 1
           fi
-          if grep -rn "secret\s*=\s*['\"]" . --include="*.mjs" --include="*.ts" --include="*.tsx" | grep -v node_modules | grep -v dist; then
+          if grep -rEn "[[:space:]]secret[[:space:]]*=[[:space:]]*['\"]" . --include="*.mjs" --include="*.ts" --include="*.tsx" | grep -v node_modules | grep -v dist; then
             echo "ERROR: Hardcoded secret found"
             exit 1
           fi
