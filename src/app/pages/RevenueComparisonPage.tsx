@@ -354,8 +354,8 @@ export function RevenueComparisonPage() {
               </table>
             </div>
             {totalPages > 1 && (
-              <div className="border-t bg-gray-50 px-4 py-3 flex items-center justify-between">
-                <p className="text-xs text-gray-500">
+              <div className="border-t bg-gray-50 px-4 py-3 flex flex-col gap-3 items-center">
+                <p className="text-xs text-gray-500 text-center">
                   {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, data.details.length)} / {data.details.length}건
                 </p>
                 <div className="flex items-center gap-1">

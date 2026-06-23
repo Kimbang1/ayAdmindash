@@ -59,6 +59,7 @@ export interface AdminStats {
   consultation_statuses: Record<Application['status'], number>
   enrollment_statuses: Record<Application['enrollment_status'], number>
   consultation_daily: Array<{ date: string; count: number }>
+  consultation_hourly?: Array<{ hour: string; count: number }>
   age_distribution: Array<{ label: string; count: number }>
   courses: Array<{
     course_id: number

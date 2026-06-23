@@ -5,6 +5,7 @@ const BASE_URL = 'https://example.supabase.co'
 
 beforeEach(() => {
   vi.stubEnv('VITE_SUPABASE_URL', BASE_URL)
+  vi.stubEnv('VITE_USE_MOCK_DATA', 'false')
   vi.stubGlobal(
     'fetch',
     vi.fn(() => Promise.resolve(new Response('{}', { status: 200 })))

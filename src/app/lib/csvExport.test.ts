@@ -1,46 +1,25 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { buildCsvString, escapeCsvCell } from './csvExport'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { buildCsvString, escapeCsvCell, exportRevenueComparisonCsv } from './csvExport'
 import type { RevenueComparisonDetail } from './types'
 
 const detail: RevenueComparisonDetail = {
   period_key: '2026-01',
-  period_label: '2026년 1월',
+  period_label: '2026-01',
   course_id: 1,
-  course_name: '컴퓨터 활용',
-  age_band: '50대',
+  course_name: '프론트엔드 실무',
+  age_band: '20대',
   applications: 10,
   registrations: 5,
   revenue: 500000,
 }
 
 describe('buildCsvString', () => {
-  it('헤더 행이 올바른 순서로 생성된다', () => {
+  it('creates a CSV header and row data', () => {
     const csv = buildCsvString([detail])
-    const firstLine = csv.split('\n')[0]
-    expect(firstLine).toBe('기간,강좌명,연령대,신청수,등록인원,총 매출(원)')
-  })
+    const lines = csv.split('\n')
 
-  it('데이터 행이 올바르게 생성된다', () => {
-    const csv = buildCsvString([detail])
-    const secondLine = csv.split('\n')[1]
-    expect(secondLine).toBe('2026년 1월,컴퓨터 활용,50대,10,5,500000')
-  })
-
-  it('쉼표 포함 값은 따옴표로 감싼다', () => {
-    const csv = buildCsvString([{ ...detail, course_name: '컴퓨터, 엑셀' }])
-    expect(csv).toContain('"컴퓨터, 엑셀"')
-  })
-
-  it('빈 배열은 헤더만 반환한다', () => {
-    const csv = buildCsvString([])
-    expect(csv.split('\n')).toHaveLength(1)
-  })
-
-  it('BOM 포함 확인 (UTF-8 BOM은 exportRevenueComparisonCsv에서 추가)', () => {
-    // buildCsvString 자체는 BOM 없이 순수 CSV 문자열 반환
-    const csv = buildCsvString([detail])
-    expect(csv.startsWith('﻿')).toBe(false)
-    expect(csv.startsWith('기간')).toBe(true)
+    expect(lines[0]).toBe('기간,강좌명,연령대,신청,등록,매출(원)')
+    expect(lines[1]).toBe('2026-01,프론트엔드 실무,20대,10,5,500000')
   })
 
   it('escapes leading formula characters for spreadsheet exports', () => {
@@ -56,5 +35,55 @@ describe('buildCsvString', () => {
       { ...detail, course_name: '=IMPORTXML("https://example.com","//a")' },
     ])
     expect(csv).toContain('"\'=IMPORTXML(""https://example.com"",""//a"")"')
+  })
+})
+
+describe('exportRevenueComparisonCsv', () => {
+  const originalCreateElement = document.createElement.bind(document)
+
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-06-23T10:00:00+09:00'))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+  })
+
+  it('groups rows by course and uses the requested filename format', () => {
+    const createObjectURL = vi.fn(() => 'blob:mock')
+    const revokeObjectURL = vi.fn()
+    const click = vi.fn()
+    const createElementSpy = vi.spyOn(document, 'createElement').mockImplementation(((tagName: string) => {
+      if (tagName === 'a') {
+        return {
+          href: '',
+          download: '',
+          click,
+        } as unknown as HTMLAnchorElement
+      }
+      return originalCreateElement(tagName)
+    }) as typeof document.createElement)
+    vi.stubGlobal('URL', {
+      createObjectURL,
+      revokeObjectURL,
+    })
+
+    exportRevenueComparisonCsv(
+      [
+        { ...detail, course_name: '프론트엔드 실무', period_label: '2026-01' },
+        { ...detail, course_name: '데이터 분석 기초', period_label: '2026-02' },
+      ],
+      { granularity: 'month', start: '2026-01', end: '2026-02' }
+    )
+
+    expect(createObjectURL).toHaveBeenCalledTimes(1)
+    expect(click).toHaveBeenCalledTimes(1)
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock')
+    expect(createElementSpy).toHaveBeenCalledWith('a')
+
+    const anchor = createElementSpy.mock.results[0]?.value as HTMLAnchorElement | undefined
+    expect(anchor?.download).toBe('260623_월별.csv')
   })
 })

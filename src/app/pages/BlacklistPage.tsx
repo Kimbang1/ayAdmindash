@@ -88,29 +88,29 @@ export function BlacklistPage() {
 
       {error && <LoadError message={error} onRetry={load} />}
 
-      <Card>
-        <CardHeader className="border-b bg-gray-50 rounded-t-xl">
-          <CardTitle className="text-base text-gray-700">블랙리스트 목록</CardTitle>
+      <Card className="gap-0">
+        <CardHeader className="border-b bg-gray-50 rounded-t-xl pb-0">
+          <div className="flex items-center justify-between gap-4">
+            <CardTitle className="text-base text-gray-700 shrink-0">블랙리스트 목록</CardTitle>
+            <div className="relative w-full max-w-[20%] min-w-[260px]">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="이름, 전화번호, 강좌명, 사유로 검색"
+                className="pl-9 text-xs"
+              />
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="border-b bg-white px-4 py-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="relative flex-1 min-w-[240px]">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <Input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="이름, 전화번호, 강좌명, 사유로 검색"
-                  className="pl-9"
-                />
-              </div>
-              {search && (
-                <Button variant="ghost" size="sm" onClick={() => setSearch('')} className="gap-1 text-gray-500">
-                  <X className="h-4 w-4" />
-                  초기화
-                </Button>
-              )}
-            </div>
+          <div className="border-b bg-white px-4 py-3 flex justify-end">
+            {search && (
+              <Button variant="ghost" size="sm" onClick={() => setSearch('')} className="gap-1 text-gray-500">
+                <X className="h-4 w-4" />
+                초기화
+              </Button>
+            )}
           </div>
 
           {loading && applications.length === 0 ? (
@@ -124,7 +124,7 @@ export function BlacklistPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-200">
-                    {['이름', '나이', '연락처', '강좌', '등록일', '사유', ''].map((h) => (
+                    {['번호', '이름', '나이', '연락처', '강좌', '등록일', '사유', ''].map((h) => (
                       <th key={h} className="text-left text-xs font-semibold text-gray-500 px-4 py-3">
                         {h}
                       </th>
@@ -134,6 +134,7 @@ export function BlacklistPage() {
                 <tbody>
                   {filteredApplications.map((app, i) => (
                     <tr key={app.id} className={`border-b border-gray-100 ${i % 2 === 0 ? '' : 'bg-gray-50/50'}`}>
+                      <td className="px-6 py-3 text-gray-400 text-xs">{i + 1}</td>
                       <td className="px-4 py-3 font-medium text-gray-900">
                         <div className="flex items-center gap-2">
                           {app.name}

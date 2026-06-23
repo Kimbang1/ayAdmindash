@@ -75,6 +75,11 @@ function periodBoundaryTime(value: string): number {
   return new Date(normalized).getTime()
 }
 
+function extractHour(value: string): number {
+  const match = value.match(/T(\d{2}):/)
+  return match ? Number(match[1]) : Number.NaN
+}
+
 function isRegisteredInPeriod(application: Application, period: StatsPeriod): boolean {
   return isDateInPeriod(application.registered_at, period)
 }
@@ -177,6 +182,61 @@ export function buildCourseMetricBreakdown(
   }
 
   return Array.from(rowsById.values()).sort((a, b) => a.name.localeCompare(b.name, 'ko'))
+}
+
+export function buildConsultationDailyMetricBreakdown(
+  daily: AdminStats['consultation_daily']
+): CourseMetricBreakdown[] {
+  return daily.map((row, index) => ({
+    courseId: -(index + 1),
+    name: row.date,
+    applications: 0,
+    registrations: 0,
+    consultations: row.count,
+    pending: 0,
+    revenue: 0,
+  }))
+}
+
+export function buildConsultationHourlyMetricBreakdown(
+  hourly: NonNullable<AdminStats['consultation_hourly']>
+): CourseMetricBreakdown[] {
+  return hourly.map((row, index) => ({
+    courseId: -(1000 + index),
+    name: row.hour,
+    applications: 0,
+    registrations: 0,
+    consultations: row.count,
+    pending: 0,
+    revenue: 0,
+  }))
+}
+
+export function buildApplicationHourlyMetricBreakdown(
+  applications: Application[],
+  period: StatsPeriod
+): CourseMetricBreakdown[] {
+  const counts = Array.from({ length: 24 }, () => 0)
+
+  for (const application of applications) {
+    if (!isDateInPeriod(application.created_at, period)) continue
+    const hour = extractHour(application.created_at)
+    if (Number.isFinite(hour) && hour >= 0 && hour < 24) {
+      counts[hour] += 1
+    }
+  }
+
+  return counts
+    .map((count, hour) => ({
+      courseId: -(2000 + hour),
+      name: `${String(hour).padStart(2, '0')}:00`,
+      applications: 0,
+      registrations: 0,
+      consultations: count,
+      pending: 0,
+      revenue: 0,
+    }))
+    .filter((row) => row.consultations > 0)
 }
 
 export function toCourses(

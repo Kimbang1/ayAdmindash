@@ -1,4 +1,67 @@
-# 구현 계획: 관리자 대시보드 개선 (알림 / 신청현황 / 캘린더 / 상세보기)
+# 구현 계획: 카카오 오픈톡 링크 SMS 전송 (네이버 클라우드 SENS)
+**상태: 계획 단계 — 네이버 클라우드 SENS 세팅 후 구현 시작**
+
+## 사전 준비 (구현 전 필요)
+1. 네이버 클라우드 콘솔 → SENS 서비스 생성 (SMS 유형)
+2. 발신번호 등록 (관리자 번호 → 인증 문자 수신)
+3. IAM Access Key 발급 (서브 계정, SENS Full Access 권한)
+4. Supabase Dashboard → Project Settings → Edge Functions → Secrets에 등록:
+   - `SENS_ACCESS_KEY` — IAM Access Key ID
+   - `SENS_SECRET_KEY` — IAM Secret Key
+   - `SENS_SERVICE_ID` — SENS SMS 서비스 ID
+   - `SENS_FROM_PHONE` — 발신번호 (01012345678 형식)
+
+## 변경 파일
+| 레포 | 파일 | 작업 |
+|------|------|------|
+| HomeProto | `supabase/migrations/014_sms_log.sql` | 신규: 발송 이력 테이블 |
+| HomeProto | `supabase/functions/admin-send-sms/index.ts` | 신규: SMS 발송 Edge Function |
+| HomeProto | `supabase/functions/_shared/logger.ts` | 수정: `sms_sent` 이벤트 타입 추가 |
+| AdminDashBoard | `src/app/lib/api.ts` | 수정: `sendKakaoLinkSms()` 추가 |
+| AdminDashBoard | `src/app/lib/types.ts` | 수정: `SmsLog` 타입 추가 |
+| AdminDashBoard | `src/app/components/applicant-detail/KakaoLinkTab.tsx` | 수정: 보내기 버튼 활성화 |
+| AdminDashBoard | `src/app/components/applicant-detail/KakaoLinkTab.test.tsx` | 수정: 보내기 버튼 테스트 |
+
+## Phase 1 — DB 마이그레이션
+```sql
+CREATE TABLE sms_log (
+  id             UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
+  application_id UUID        REFERENCES applications(id) ON DELETE SET NULL,
+  to_phone       TEXT        NOT NULL,
+  kakao_link     TEXT        NOT NULL,
+  request_id     TEXT,
+  status         TEXT        NOT NULL CHECK (status IN ('success','fail')),
+  error_message  TEXT,
+  sent_at        TIMESTAMPTZ DEFAULT NOW()
+);
+ALTER TABLE sms_log ENABLE ROW LEVEL SECURITY;
+```
+
+## Phase 2 — Edge Function (admin-send-sms)
+흐름: JWT 검증 → application_id로 phone + kakao_link 조회 → kakao_link 없으면 400
+→ HMAC-SHA256 서명 생성 → SENS API POST → sms_log 기록 → 결과 반환
+
+SMS 본문 (90자 이내):
+```
+[과정명] 상담 안내
+안녕하세요 {이름}님,
+카카오 1:1 오픈채팅으로 연결해 드립니다.
+{kakao_link}
+```
+
+## Phase 3 — Frontend
+- `api.ts`: `sendKakaoLinkSms(token, applicationId)` 추가
+- `KakaoLinkTab.tsx`: savedLink 있을 때만 "보내기" 활성화, 성공/실패 토스트
+
+## 제약
+- 월 200건 무료, 초과 시 건당 9원
+- 문자 90자 초과 시 LMS 요금 적용 → 본문 90자 이내 고정
+
+---
+
+## 이전 계획 아카이브
+
+# [이전] 구현 계획: 관리자 대시보드 개선 (알림 / 신청현황 / 캘린더 / 상세보기)
 
 ## 요구사항 정리
 

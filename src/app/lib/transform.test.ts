@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildConsultationDailyMetricBreakdown,
   buildCourseMetricBreakdown,
   calculateCurrentCourseRevenue,
   toApplicants,
@@ -191,5 +192,18 @@ describe("buildCourseMetricBreakdown", () => {
       pending: 2,
       revenue: 150000,
     });
+  });
+});
+
+describe("buildConsultationDailyMetricBreakdown", () => {
+  it("상담 기록 hover 합계가 서버 일자별 상담 기록 합계와 일치하도록 변환한다", () => {
+    const rows = buildConsultationDailyMetricBreakdown([
+      { date: "2026-06-01", count: 1 },
+      { date: "2026-06-02", count: 2 },
+    ]);
+
+    expect(rows.map((row) => row.name)).toEqual(["2026-06-01", "2026-06-02"]);
+    expect(rows.reduce((sum, row) => sum + row.consultations, 0)).toBe(3);
+    expect(rows.every((row) => row.applications === 0 && row.registrations === 0)).toBe(true);
   });
 });
